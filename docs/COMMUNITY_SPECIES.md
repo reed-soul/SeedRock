@@ -9,7 +9,7 @@ Step-by-step guide for adding a new rock type to SeedRock. For a complete real P
 | 1 | Copy preset template | `src/species/<name>.js` |
 | 2 | Register species | `src/species/index.js` |
 | 3 | Add PBR textures (4 maps) | `public/assets/textures/` |
-| 4 | Validate & screenshot | `npm test`, viewer |
+| 4 | Validate & screenshot | `pnpm test`, viewer |
 | 5 | Open PR | one species per PR |
 
 ## 1. Create the preset
@@ -63,7 +63,7 @@ Registry key **must equal** `preset.id`.
 |------|---------|-------|
 | `<prefix>_ao.png` | linear | white = exposed, black = crevice |
 
-AO is auto-loaded when present (`npm run textures` generates procedural AO for all built-in species).
+AO is auto-loaded when present (`pnpm textures` generates procedural AO for all built-in species).
 
 ### Option A — procedural placeholder
 
@@ -76,15 +76,15 @@ marble: { rgb: [220, 215, 208], var: 14, grain: 0.07, pore: 0.03, roughBase: 0.7
 Then:
 
 ```bash
-npm run textures
+pnpm textures
 ```
 
 ### Option B — AI-generated (recommended for PRs)
 
 ```bash
-npm run textures:prompts -- --species marble
+pnpm textures:prompts -- --species marble
 # generate albedo, normal, roughness, ao with Flux / gpt-image / SD3
-npm run textures:ingest -- --species marble --dir ./ai-output/
+pnpm textures:ingest -- --species marble --dir ./ai-output/
 ```
 
 See [AI_TEXTURES.md](AI_TEXTURES.md) for prompt tips.
@@ -92,9 +92,9 @@ See [AI_TEXTURES.md](AI_TEXTURES.md) for prompt tips.
 ## 4. Validate locally
 
 ```bash
-npm test
-npm run build
-npm run dev    # http://localhost:5390
+pnpm test
+pnpm build
+pnpm dev    # http://localhost:5390
 ```
 
 **Screenshot checklist**
@@ -126,10 +126,10 @@ Use the PR checklist in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Common mistakes
 
-- `id` does not match registry key → `npm test` fails validation
+- `id` does not match registry key → `pnpm test` fails validation
 - Baked lighting in albedo → looks wrong at different sun angles
 - Non-tileable textures → visible seams on large rocks
-- Missing `npm run textures` entry → CI passes but textures are missing in PR
+- Missing `pnpm textures` entry → CI passes but textures are missing in PR
 
 ## Questions?
 
