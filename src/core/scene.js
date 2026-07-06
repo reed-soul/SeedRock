@@ -8,7 +8,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 export async function createScene(container) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1d24);
-  scene.fog = new THREE.Fog(0x1a1d24, 18, 55);
+  scene.fog = new THREE.Fog(0x1a1d24, 22, 70);
 
   const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.05, 200);
   camera.position.set(4.2, 2.8, 5.5);
@@ -29,7 +29,7 @@ export async function createScene(container) {
   controls.enableDamping = true;
   controls.target.set(0, 1.1, 0);
   controls.minDistance = 1.5;
-  controls.maxDistance = 25;
+  controls.maxDistance = 35;
   controls.update();
 
   const sun = new THREE.DirectionalLight(0xfff0dc, 2.6);
@@ -38,7 +38,7 @@ export async function createScene(container) {
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
-  Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.5, far: 30 });
+  Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -4, near: 0.5, far: 45 });
   sun.shadow.camera.updateProjectionMatrix();
   scene.add(sun);
 
@@ -46,14 +46,14 @@ export async function createScene(container) {
   scene.add(new THREE.AmbientLight(0x404550, 0.25));
 
   const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(12, 64),
+    new THREE.CircleGeometry(16, 64),
     new THREE.MeshStandardMaterial({ color: 0x2a2e34, roughness: 0.95, metalness: 0 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
 
-  const grid = new THREE.GridHelper(12, 24, 0x3a4048, 0x2a2e34);
+  const grid = new THREE.GridHelper(16, 32, 0x3a4048, 0x2a2e34);
   grid.position.y = 0.001;
   scene.add(grid);
 

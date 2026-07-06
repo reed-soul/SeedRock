@@ -16,6 +16,7 @@ export function buildGUI(ctx) {
     species: gui.addFolder('Rock Type'),
     shape: gui.addFolder('Shape'),
     erosion: gui.addFolder('Erosion'),
+    overlay: gui.addFolder('Cover'),
     scene: gui.addFolder('Scene'),
     export: gui.addFolder('Export'),
   };
@@ -45,6 +46,12 @@ export function buildGUI(ctx) {
   folders.erosion.add(state.erosion, 'hydraulic').name('Hydraulic').onChange(() => ctx.onRegenerate('erosion'));
   folders.erosion.add(state.erosion, 'edgeWear').name('Edge Wear').onChange(() => ctx.onRegenerate('erosion'));
 
+  folders.overlay.add(state.overlay, 'moss', 0, 1, 0.01).name('Moss').onChange(() => ctx.onRegenerate('overlay'));
+  folders.overlay.add(state.overlay, 'snow', 0, 1, 0.01).name('Snow').onChange(() => ctx.onRegenerate('overlay'));
+
+  folders.scene.add(state, 'sceneMode', { Single: 'single', Living: 'living' }).name('Mode').onChange(() => ctx.onRegenerate('scene'));
+  folders.scene.add(state.scene, 'scatterCount', 0, 30, 1).name('Scatter').onFinishChange(() => ctx.onRegenerate('scene'));
+  folders.scene.add(state, 'useLOD').name('LOD').onChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'autoRotate').name('Auto Rotate');
   folders.scene.add(state, 'autoRotateSpeed', 0.1, 3, 0.1).name('Rotate Speed');
   folders.scene.add(state, 'showGrid').name('Grid').onChange((v) => { state.onShowGrid?.(v); });
@@ -102,6 +109,10 @@ export function createDefaultState() {
     seed: 42,
     shape: { radius: 1, detail: 4, squash: 0.88, amplitude: 0.28 },
     erosion: { thermal: true, hydraulic: true, edgeWear: true },
+    overlay: { moss: 0, snow: 0 },
+    sceneMode: 'single',
+    scene: { scatterCount: 14 },
+    useLOD: true,
     autoRotate: true,
     autoRotateSpeed: 0.6,
     showGrid: true,
