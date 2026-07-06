@@ -23,8 +23,8 @@
 - [ ] Preset registered in `src/species/index.js`
 - [ ] `id` matches registry key
 - [ ] Textures in `public/assets/textures/` (or procedural entry in `generate-procedural.mjs`)
-- [ ] `npm test` passes
-- [ ] `npm run build` passes
+- [ ] `pnpm test` passes
+- [ ] `pnpm build` passes
 - [ ] Screenshot or clip attached
 - [ ] No unrelated refactors
 

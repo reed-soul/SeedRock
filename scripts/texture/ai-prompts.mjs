@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Print AI image-generation prompts for each rock species.
-// Usage: npm run textures:prompts [-- --species granite]
+// Usage: pnpm textures:prompts [-- --species granite]
 
 const PROMPTS = {
   granite: {
@@ -83,4 +83,4 @@ for (const [id, prompts] of entries) {
 }
 
 console.log('After generation, ingest with:');
-console.log('  npm run textures:ingest -- --species <id> --dir ./ai-output/');
+console.log('  pnpm textures:ingest -- --species <id> --dir ./ai-output/');

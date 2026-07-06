@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Procedural PBR rock texture generator — offline stand-in until AI textures land.
-// Run: npm run textures
+// Run: pnpm textures
 
 import sharp from 'sharp';
 import { mkdir } from 'node:fs/promises';

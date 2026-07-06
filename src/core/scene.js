@@ -1,5 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { buildSky } from './sky.js';
+import { buildTerrain } from './terrain.js';
 
 /**
  * @param {HTMLElement} container
@@ -16,22 +18,22 @@ async function initRenderer(container, opts = {}) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.22;
   await renderer.init();
   return renderer;
 }
 
 /**
  * @param {HTMLElement} container
- * @returns {Promise<{ scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGPURenderer, controls: OrbitControls, backend: string }>}
+ * @returns {Promise<{ scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGPURenderer, controls: OrbitControls, backend: string, grid: THREE.GridHelper }>}
  */
 export async function createScene(container) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1d24);
-  scene.fog = new THREE.Fog(0x1a1d24, 22, 70);
+  scene.background = new THREE.Color(0x4a5a6e);
+  scene.fog = new THREE.Fog(0x4a5a6e, 20, 88);
 
-  const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.05, 200);
-  camera.position.set(4.2, 2.8, 5.5);
+  const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.05, 200);
+  camera.position.set(9.4, 4.8, 10.8);
 
   let renderer;
   let backend;
@@ -50,34 +52,35 @@ export async function createScene(container) {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.target.set(0, 1.1, 0);
-  controls.minDistance = 1.5;
-  controls.maxDistance = 35;
+  controls.target.set(0, 2.5, -2.2);
+  controls.minDistance = 2.5;
+  controls.maxDistance = 42;
   controls.update();
 
-  const sun = new THREE.DirectionalLight(0xfff0dc, 2.6);
-  sun.position.set(6, 9, 4);
+  scene.add(buildSky());
+
+  const sun = new THREE.DirectionalLight(0xffe6c8, 3.1);
+  sun.position.set(14, 9, 7);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.03;
-  Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -4, near: 0.5, far: 45 });
+  sun.shadow.bias = -0.00035;
+  sun.shadow.normalBias = 0.028;
+  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -6, near: 0.5, far: 55 });
   sun.shadow.camera.updateProjectionMatrix();
   scene.add(sun);
 
-  scene.add(new THREE.HemisphereLight(0xb8c8e8, 0x3a3530, 0.85));
-  scene.add(new THREE.AmbientLight(0x404550, 0.25));
+  const fill = new THREE.DirectionalLight(0xb8c8e8, 0.55);
+  fill.position.set(-8, 5, -6);
+  scene.add(fill);
 
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(16, 64),
-    new THREE.MeshStandardMaterial({ color: 0x2a2e34, roughness: 0.95, metalness: 0 }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  scene.add(new THREE.HemisphereLight(0xd0dff5, 0x3a3028, 0.95));
+  scene.add(new THREE.AmbientLight(0x505868, 0.18));
 
-  const grid = new THREE.GridHelper(16, 32, 0x3a4048, 0x2a2e34);
-  grid.position.y = 0.001;
+  scene.add(buildTerrain({ seed: 3310 }));
+
+  const grid = new THREE.GridHelper(24, 48, 0x5a6478, 0x3a4048);
+  grid.position.y = 0.015;
+  grid.visible = false;
   scene.add(grid);
 
   const onResize = () => {
@@ -93,6 +96,7 @@ export async function createScene(container) {
     renderer,
     controls,
     backend,
+    grid,
     dispose() {
       window.removeEventListener('resize', onResize);
       renderer.dispose();

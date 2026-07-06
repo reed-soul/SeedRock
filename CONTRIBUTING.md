@@ -9,9 +9,9 @@ Thank you for helping grow the procedural rock library. The easiest contribution
 ```bash
 git clone https://github.com/reed-soul/SeedRock.git
 cd SeedRock
-npm install
-npm run textures
-npm run dev
+pnpm install
+pnpm textures
+pnpm dev
 ```
 
 ## Adding a rock species
@@ -42,14 +42,14 @@ The registry key (`myRock`) must match `preset.id`.
 
 **Option A — procedural placeholder**
 
-Add an entry to `scripts/texture/generate-procedural.mjs` and run `npm run textures` (generates albedo, normal, roughness, and AO).
+Add an entry to `scripts/texture/generate-procedural.mjs` and run `pnpm textures` (generates albedo, normal, roughness, and AO).
 
 **Option B — AI-generated (recommended)**
 
 ```bash
-npm run textures:prompts -- --species my_rock   # print prompts (incl. AO)
+pnpm textures:prompts -- --species my_rock   # print prompts (incl. AO)
 # generate images with Flux / gpt-image / SD3 → save as my_rock_albedo.png etc.
-npm run textures:ingest -- --species myRock --dir ./ai-output/
+pnpm textures:ingest -- --species myRock --dir ./ai-output/
 ```
 
 See [docs/AI_TEXTURES.md](docs/AI_TEXTURES.md) for the full AI workflow.
@@ -57,8 +57,8 @@ See [docs/AI_TEXTURES.md](docs/AI_TEXTURES.md) for the full AI workflow.
 ### 4. Validate
 
 ```bash
-npm test
-npm run build
+pnpm test
+pnpm build
 ```
 
 ### 5. Open a PR
@@ -74,8 +74,8 @@ npm run build
 - [ ] `id` matches registry key
 - [ ] Textures in `public/assets/textures/` (or procedural entry added)
 - [ ] AO map included when possible (`*_ao.png`)
-- [ ] `npm test` passes
-- [ ] `npm run build` passes
+- [ ] `pnpm test` passes
+- [ ] `pnpm build` passes
 - [ ] No unrelated refactors
 
 ## Code style
