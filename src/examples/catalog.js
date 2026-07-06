@@ -17,36 +17,15 @@
 /** @type {RockExample[]} */
 export const EXAMPLES = [
   {
-    id: 'granite-classic',
-    title: 'Granite Boulder',
-    description: 'Coarse igneous rock with blocky thermal erosion and hydraulic wear.',
-    speciesKey: 'granite',
-    seed: 42,
-    tags: ['igneous', 'hero'],
-  },
-  {
-    id: 'sandstone-desert',
-    title: 'Desert Sandstone',
-    description: 'Warm sedimentary layers with soft stratification and edge wear.',
-    speciesKey: 'sandstone',
-    seed: 1204,
-    tags: ['sedimentary', 'desert'],
-  },
-  {
-    id: 'basalt-columns',
-    title: 'Basalt Outcrop',
-    description: 'Dark volcanic stone with angular fractures and fine grain.',
-    speciesKey: 'basalt',
-    seed: 8801,
-    tags: ['igneous', 'volcanic'],
-  },
-  {
-    id: 'karst-cavern',
-    title: 'Karst Limestone',
-    description: 'Dissolution pits and sharp eroded ridges from cave weathering.',
+    id: 'karst-living',
+    title: 'Karst Canyon',
+    description: 'Dissolution-sculpted cliff with scattered boulders — the default showcase.',
     speciesKey: 'karst',
     seed: 3310,
-    tags: ['sedimentary', 'porous'],
+    sceneMode: 'living',
+    scene: { scatterCount: 20 },
+    overlay: { moss: 0.18 },
+    tags: ['showcase', 'scene', 'karst'],
   },
   {
     id: 'glacial-snow',
@@ -55,7 +34,7 @@ export const EXAMPLES = [
     speciesKey: 'glacial',
     seed: 7007,
     overlay: { snow: 0.85 },
-    tags: ['alpine', 'snow'],
+    tags: ['alpine', 'snow', 'hero'],
   },
   {
     id: 'sandstone-moss',
