@@ -3,6 +3,8 @@ import { sandstone } from './sandstone.js';
 import { basalt } from './basalt.js';
 import { limestone } from './limestone.js';
 import { volcanic } from './volcanic.js';
+import { riverCobble } from './river-cobble.js';
+import { karst } from './karst.js';
 
 export const SPECIES = {
   granite,
@@ -10,6 +12,8 @@ export const SPECIES = {
   basalt,
   limestone,
   volcanic,
+  riverCobble,
+  karst,
 };
 
 export const DEFAULT_SPECIES = 'granite';

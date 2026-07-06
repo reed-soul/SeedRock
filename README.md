@@ -10,7 +10,7 @@
 
 A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF.
 
-> **Status: `beta`.** Five rock types, PBR textures, moss/snow overlays, LOD, living cliff scene, and GitHub Pages deploy.
+> **Status: `beta`.** Seven rock types, billboard impostor baking, AI texture ingest, WebGL2 fallback.
 
 ## What's planned
 
@@ -31,8 +31,9 @@ A fully procedural rock and cliff generator: pick a rock type, tune its paramete
 
 ```bash
 npm install
-npm run textures   # generate procedural PBR maps (first time / after species changes)
-npm run dev        # http://localhost:5390
+npm run textures        # procedural PBR maps
+npm run textures:ingest -- --species granite --dir ./ai-output/  # AI maps
+npm run dev             # http://localhost:5390
 ```
 
 ```bash
@@ -64,7 +65,7 @@ scripts/
 New rocks are added by dropping in a **preset** and a set of **generated textures** — no engine changes:
 
 1. **Write the preset** in `src/species/<name>.js` — define erosion params, noise scales, texture bindings, and LOD thresholds.
-2. **Generate textures** with an AI image model (gpt-image-2 / Flux / SD3) and place them in `assets/textures/`.
+2. **Generate textures** with an AI image model (gpt-image-2 / Flux / SD3) and place them via `npm run textures:ingest -- --species <id> --dir <folder>`.
 3. **Register** in `src/species/index.js`.
 
 ## Tech stack
