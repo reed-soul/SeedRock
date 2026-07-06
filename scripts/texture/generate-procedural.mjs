@@ -115,6 +115,52 @@ async function generateMossOverlay(seed) {
   console.log('  ✓ moss overlay');
 }
 
+async function generateSnowOverlay(seed) {
+  const albedo = new Uint8Array(SIZE * SIZE * 4);
+  const normal = new Uint8Array(SIZE * SIZE * 4);
+  const roughness = new Uint8Array(SIZE * SIZE * 4);
+  const heights = new Float32Array(SIZE * SIZE);
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const u = x / SIZE, v = y / SIZE;
+      heights[y * SIZE + x] = fbm(u, v, seed, 5) * 0.5 + fbm(u * 3.1, v * 3.1, seed + 5, 2) * 0.5;
+    }
+  }
+
+  const sampleH = (x, y) => heights[Math.max(0, Math.min(SIZE - 1, y)) * SIZE + Math.max(0, Math.min(SIZE - 1, x))];
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const i = (y * SIZE + x) * 4;
+      const n = fbm(x / SIZE, y / SIZE, seed + 3, 6);
+      const crystal = fbm(x * 7.3 / SIZE, y * 7.3 / SIZE, seed + 11, 3);
+      const shade = 0.88 + n * 0.08 - crystal * 0.06;
+      albedo[i] = Math.round(228 * shade + crystal * 8);
+      albedo[i + 1] = Math.round(234 * shade + crystal * 6);
+      albedo[i + 2] = Math.round(242 * shade + crystal * 4);
+      albedo[i + 3] = 255;
+
+      const dhdx = sampleH(x + 1, y) - sampleH(x - 1, y);
+      const dhdy = sampleH(x, y + 1) - sampleH(x, y - 1);
+      const nx = -dhdx * 3.5, ny = -dhdy * 3.5, nz = 1;
+      const len = Math.hypot(nx, ny, nz);
+      normal[i] = Math.round((nx / len) * 0.5 * 255 + 128);
+      normal[i + 1] = Math.round((ny / len) * 0.5 * 255 + 128);
+      normal[i + 2] = Math.round((nz / len) * 0.5 * 255 + 255);
+      normal[i + 3] = 255;
+
+      const rough = Math.round((0.94 + n * 0.04) * 255);
+      roughness[i] = rough; roughness[i + 1] = rough; roughness[i + 2] = rough; roughness[i + 3] = 255;
+    }
+  }
+
+  await writePng('snow_albedo.png', albedo, SIZE, SIZE, OVERLAY_DIR);
+  await writePng('snow_normal.png', normal, SIZE, SIZE, OVERLAY_DIR);
+  await writePng('snow_roughness.png', roughness, SIZE, SIZE, OVERLAY_DIR);
+  console.log('  ✓ snow overlay');
+}
+
 async function generateSpecies(id, cfg, seed) {
   const albedo = new Uint8Array(SIZE * SIZE * 4);
   const normal = new Uint8Array(SIZE * SIZE * 4);
@@ -185,4 +231,5 @@ for (const [id, cfg] of Object.entries(SPECIES)) {
 }
 console.log('Generating overlay textures →', OVERLAY_DIR);
 await generateMossOverlay(9001);
+await generateSnowOverlay(9002);
 console.log('Done.');
