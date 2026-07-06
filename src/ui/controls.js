@@ -55,6 +55,8 @@ export function buildGUI(ctx) {
   folders.scene.add(state, 'bakeBillboard').name('Billboard Bake').onChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'autoRotate').name('Auto Rotate');
   folders.scene.add(state, 'autoRotateSpeed', 0.1, 3, 0.1).name('Rotate Speed');
+  folders.scene.add(state, 'quality', { High: 'high', Medium: 'medium', Low: 'low' }).name('Quality').onChange(() => ctx.onRegenerate('scene'));
+  folders.scene.add(state, 'perfHud').name('Perf HUD');
   folders.scene.add(state, 'showGrid').name('Grid').onChange((v) => { state.onShowGrid?.(v); });
 
   folders.export.add({ exportGlb: async () => {
@@ -118,5 +120,7 @@ export function createDefaultState() {
     autoRotate: true,
     autoRotateSpeed: 0.6,
     showGrid: true,
+    quality: 'high',
+    perfHud: false,
   };
 }

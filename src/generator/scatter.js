@@ -26,12 +26,13 @@ export function buildScatter(preset, seed, material, opts = {}) {
 
   const variants = [0, 1, 2].map((vi) => {
     const subSeed = `${seed}:v${vi}`;
+    const impDetail = opts.quality === 'low' ? 1 : opts.quality === 'medium' ? 2 : (preset.lod?.impostor?.detail ?? 2);
     const subPreset = {
       ...preset,
       shape: {
         ...preset.shape,
         radius: preset.shape.radius * rng.range(0.85, 1.1),
-        detail: Math.max(1, preset.lod?.impostor?.detail ?? 2),
+        detail: Math.max(1, impDetail),
       },
       noise: {
         ...preset.noise,
@@ -70,7 +71,8 @@ export function buildScatter(preset, seed, material, opts = {}) {
     const im = new InstancedMesh(variants[vi], material, matrices.length);
     matrices.forEach((m, idx) => im.setMatrixAt(idx, m));
     im.instanceMatrix.needsUpdate = true;
-    im.castShadow = true;
+    const avgScale = matrices.reduce((sum, m) => sum + m.elements[0], 0) / matrices.length;
+    im.castShadow = avgScale >= 0.28;
     im.receiveShadow = true;
     im.name = `scatter_${vi}`;
     group.add(im);

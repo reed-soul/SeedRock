@@ -64,8 +64,15 @@ export function generateCliffGeometry(preset, seed, opts = {}) {
  * @param {string|number} seed
  * @param {import('three').Material} material
  */
-export function buildCliff(preset, seed, material) {
-  const geometry = generateCliffGeometry(preset, seed);
+export function buildCliff(preset, seed, material, opts = {}) {
+  const quality = opts.quality ?? 'high';
+  const segments = quality === 'low'
+    ? { segmentsW: 24, segmentsH: 12 }
+    : quality === 'medium'
+      ? { segmentsW: 36, segmentsH: 18 }
+      : { segmentsW: 48, segmentsH: 24 };
+
+  const geometry = generateCliffGeometry(preset, seed, segments);
   const mesh = new Mesh(geometry, material);
   mesh.name = `cliff_${preset.id}`;
   mesh.castShadow = true;
