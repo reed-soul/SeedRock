@@ -19,6 +19,7 @@ export const SHOWCASE = {
   showGrid: false,
   quality: 'high',
   perfHud: false,
+  style: 'pbr',
   paint: {
     spacing: 0.3,
     scaleMin: 0.15,
@@ -88,6 +89,7 @@ export function createShowcaseState() {
     showGrid: SHOWCASE.showGrid,
     quality: SHOWCASE.quality,
     perfHud: SHOWCASE.perfHud,
+    style: SHOWCASE.style,
     paint: { ...SHOWCASE.paint },
   };
 }

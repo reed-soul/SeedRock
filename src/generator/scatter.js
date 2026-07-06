@@ -39,7 +39,7 @@ export function buildScatter(preset, seed, material, opts = {}) {
         amplitude: preset.noise.amplitude * rng.range(0.8, 1.2),
       },
     };
-    return generateRockGeometry(subPreset, subSeed);
+    return generateRockGeometry(subPreset, subSeed, { style: opts.style });
   }).map((geo) => {
     geo.computeBoundingBox();
     return geo;
