@@ -15,6 +15,7 @@ export const basalt = {
     triplanarScale: 0.38,
   },
   shape: {
+    form: 'columnar',
     radius: 1,
     detail: 4,
     squash: 1.05,
