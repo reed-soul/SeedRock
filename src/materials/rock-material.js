@@ -8,8 +8,11 @@ import {
 import { textureUrl } from '../core/textures.js';
 
 /**
- * @typedef {{ moss?: number, snow?: number, useMossTexture?: boolean }} OverlayParams
- * @typedef {{ mossAlbedo?: import('three').Texture, mossNormal?: import('three').Texture, mossRoughness?: import('three').Texture }} OverlayMaps
+ * @typedef {{ moss?: number, snow?: number, useMossTexture?: boolean, useSnowTexture?: boolean }} OverlayParams
+ * @typedef {{
+ *   mossAlbedo?: import('three').Texture, mossNormal?: import('three').Texture, mossRoughness?: import('three').Texture,
+ *   snowAlbedo?: import('three').Texture, snowNormal?: import('three').Texture, snowRoughness?: import('three').Texture,
+ * }} OverlayMaps
  */
 
 /**
@@ -29,6 +32,7 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
   const mossAmt = float(overlay.moss ?? 0);
   const snowAmt = float(overlay.snow ?? 0);
   const useMossTex = overlay.useMossTexture !== false;
+  const useSnowTex = overlay.useSnowTexture !== false;
 
   let colorNode;
   let roughnessNode = float(preset.roughness);
@@ -93,8 +97,28 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
     }
 
     const snowColor = vec3(0.91, 0.93, 0.96);
-    colorNode = mix(colorNode, snowColor, snowMask);
-    roughnessNode = mix(roughnessNode, float(0.98), snowMask.mul(0.6));
+    if (useSnowTex && overlayMaps.snowAlbedo && (overlay.snow ?? 0) > 0) {
+      const snowScale = float(0.65);
+      const snowTexColor = triplanarTexture(texture(overlayMaps.snowAlbedo), null, null, snowScale);
+      colorNode = mix(colorNode, snowTexColor, snowMask);
+
+      if (overlayMaps.snowRoughness) {
+        const snowRough = triplanarTexture(texture(overlayMaps.snowRoughness), null, null, snowScale).g;
+        roughnessNode = mix(roughnessNode, snowRough, snowMask);
+      } else {
+        roughnessNode = mix(roughnessNode, float(0.98), snowMask.mul(0.6));
+      }
+
+      if (overlayMaps.snowNormal) {
+        const snowN = triplanarTexture(texture(overlayMaps.snowNormal), null, null, snowScale).xyz.mul(2).sub(vec3(1, 1, 2));
+        const snowView = cameraViewMatrix.mul(vec4(snowN, 0)).xyz;
+        const baseNormal = mat.normalNode ?? normalView;
+        mat.normalNode = normalize(mix(baseNormal, normalize(baseNormal.add(snowView.mul(0.35))), snowMask));
+      }
+    } else if ((overlay.snow ?? 0) > 0) {
+      colorNode = mix(colorNode, snowColor, snowMask);
+      roughnessNode = mix(roughnessNode, float(0.98), snowMask.mul(0.6));
+    }
   }
 
   mat.colorNode = colorNode;
