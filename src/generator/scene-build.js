@@ -23,6 +23,7 @@ export async function buildLivingScene(preset, seed, material, opts = {}) {
   const scatter = buildScatter(preset, `${seed}:scatter`, material, {
     count: opts.scatterCount ?? 14,
     quality: opts.quality,
+    style: opts.style,
   });
   root.add(scatter);
 

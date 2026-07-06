@@ -141,12 +141,14 @@ async function main() {
     if (gen !== rebuildGen) return;
 
     mapsForBake = maps;
-    currentMaterial = makeRockMaterial(preset, maps, state.overlay, overlayMaps);
+    currentMaterial = makeRockMaterial(preset, maps, state.overlay, overlayMaps, { style: state.style });
+    brush.setStyle(state.style);
 
     const lodOpts = {
       bakeBillboard: state.useLOD && state.bakeBillboard,
       renderer,
       quality: state.quality,
+      style: state.style,
       bakeService,
       maps,
       bakeOpts: {
@@ -167,7 +169,7 @@ async function main() {
     } else if (state.sceneMode === 'paint') {
       // Paint mode: a lightweight hero rock for preview (no LOD/bake). The brush
       // mesh is rebuilt too — species/shape/erosion changes swap what gets painted.
-      const geometry = generateRockGeometry(preset, state.seed);
+      const geometry = generateRockGeometry(preset, state.seed, { style: state.style });
       const mesh = new Mesh(geometry, currentMaterial);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -179,7 +181,7 @@ async function main() {
       currentRoot = await buildHeroRock(preset, state.seed, currentMaterial, lodOpts);
       if (gen !== rebuildGen) return;
     } else {
-      const geometry = generateRockGeometry(preset, state.seed);
+      const geometry = generateRockGeometry(preset, state.seed, { style: state.style });
       const mesh = new Mesh(geometry, currentMaterial);
       mesh.castShadow = true;
       mesh.receiveShadow = true;

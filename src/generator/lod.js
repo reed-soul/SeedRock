@@ -4,10 +4,10 @@ import { bakeRockImpostor } from '../core/impostor.js';
 
 const LOD_NAMES = ['LOD0', 'LOD1', 'LOD2', 'LOD3'];
 
-function meshLevel(preset, seed, material, detailKey, distance, lodIndex) {
+function meshLevel(preset, seed, material, detailKey, distance, lodIndex, style) {
   const detail = preset.lod?.[detailKey]?.detail ?? preset.shape.detail;
   const levelPreset = { ...preset, shape: { ...preset.shape, detail } };
-  const geometry = generateRockGeometry(levelPreset, seed);
+  const geometry = generateRockGeometry(levelPreset, seed, { style });
   const mesh = new Mesh(geometry, material);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -21,16 +21,17 @@ function meshLevel(preset, seed, material, detailKey, distance, lodIndex) {
  * Build a THREE.LOD rock with full / reduced / (mesh or billboard) levels.
  */
 export function buildRockLOD(preset, seed, material, opts = {}) {
+  const { style } = opts;
   const lod = new LOD();
   lod.name = `rock_${preset.id}_${seed}`;
 
-  const full = meshLevel(preset, seed, material, 'full', 0, 0);
-  const reduced = meshLevel(preset, seed, material, 'reduced', 10, 1);
+  const full = meshLevel(preset, seed, material, 'full', 0, 0, style);
+  const reduced = meshLevel(preset, seed, material, 'reduced', 10, 1, style);
   lod.addLevel(full.mesh, full.distance);
   lod.addLevel(reduced.mesh, reduced.distance);
 
   if (!opts.bakeBillboard) {
-    const imp = meshLevel(preset, seed, material, 'impostor', 20, 2);
+    const imp = meshLevel(preset, seed, material, 'impostor', 20, 2, style);
     lod.addLevel(imp.mesh, imp.distance);
   }
 
