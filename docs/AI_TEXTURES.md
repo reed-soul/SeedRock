@@ -27,13 +27,14 @@ Use any image model that supports tileable textures:
 | **gpt-image** | Strong at following PBR channel instructions |
 | **SD3 / SDXL** | Use a seamless texture LoRA if available |
 
-Generate three maps per species:
+Generate three maps per species (four recommended):
 
 | File | Content |
 |------|---------|
 | `<species>_albedo.png` | Base color, sRGB, no baked lighting |
 | `<species>_normal.png` | Tangent-space normal, linear |
 | `<species>_roughness.png` | Grayscale roughness, linear |
+| `<species>_ao.png` | Ambient occlusion (optional) — white = exposed, black = crevice |
 
 **Tips**
 
@@ -41,6 +42,7 @@ Generate three maps per species:
 - 512×512 or 1024×1024 square PNG
 - Normal maps: classic blue-purple, OpenGL convention (+Y up)
 - Roughness: white = rough, black = smooth
+- AO: white = fully lit, black = occluded crevice (multiplied at runtime via `aoNode`)
 
 ## Step 3 — Ingest
 
@@ -51,6 +53,7 @@ ai-output/
   granite_albedo.png
   granite_normal.png
   granite_roughness.png
+  granite_ao.png          # optional
 ```
 
 ```bash
@@ -77,7 +80,15 @@ Same collaboration pattern as [SeedThree](https://github.com/SkyeShark/SeedThree
 
 Example handoff to an image agent:
 
-> Generate tileable PBR textures for SeedRock granite. Use these prompts: [paste `npm run textures:prompts -- --species granite` output]. Save as granite_albedo.png, granite_normal.png, granite_roughness.png.
+> Generate tileable PBR textures for SeedRock granite. Use these prompts: [paste `npm run textures:prompts -- --species granite` output]. Save as granite_albedo.png, granite_normal.png, granite_roughness.png, granite_ao.png.
+
+## Ambient occlusion (AO)
+
+AO maps darken crevices and pores without baking shadows into the albedo. The material applies them via triplanar `aoNode` when `<prefix>_ao.png` exists.
+
+- **Procedural:** `npm run textures` derives AO from height-field cavity analysis
+- **AI:** use the `[ao]` prompt from `npm run textures:prompts`
+- **Optional:** species work without AO; omit the file or skip ingest
 
 ## Fallback
 

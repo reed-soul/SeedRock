@@ -165,6 +165,7 @@ async function generateSpecies(id, cfg, seed) {
   const albedo = new Uint8Array(SIZE * SIZE * 4);
   const normal = new Uint8Array(SIZE * SIZE * 4);
   const roughness = new Uint8Array(SIZE * SIZE * 4);
+  const ao = new Uint8Array(SIZE * SIZE * 4);
   const heights = new Float32Array(SIZE * SIZE);
 
   for (let y = 0; y < SIZE; y++) {
@@ -212,12 +213,23 @@ async function generateSpecies(id, cfg, seed) {
       roughness[i + 1] = rough;
       roughness[i + 2] = rough;
       roughness[i + 3] = 255;
+
+      const lap = Math.abs(
+        sampleH(x + 1, y) + sampleH(x - 1, y) + sampleH(x, y + 1) + sampleH(x, y - 1) - 4 * h,
+      );
+      const cavity = Math.abs(dhdx) + Math.abs(dhdy);
+      const aoVal = Math.round(Math.max(72, Math.min(255, (1 - cavity * 1.6 - lap * 0.45) * 255)));
+      ao[i] = aoVal;
+      ao[i + 1] = aoVal;
+      ao[i + 2] = aoVal;
+      ao[i + 3] = 255;
     }
   }
 
   await writePng(`${id}_albedo.png`, albedo);
   await writePng(`${id}_normal.png`, normal);
   await writePng(`${id}_roughness.png`, roughness);
+  await writePng(`${id}_ao.png`, ao);
   console.log(`  ✓ ${id}`);
 }
 

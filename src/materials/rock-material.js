@@ -17,7 +17,7 @@ import { textureUrl } from '../core/textures.js';
 
 /**
  * @param {import('../species/granite.js').RockPreset} preset
- * @param {{ albedo?: import('three').Texture, normal?: import('three').Texture, roughness?: import('three').Texture }} maps
+ * @param {{ albedo?: import('three').Texture, normal?: import('three').Texture, roughness?: import('three').Texture, ao?: import('three').Texture }} maps
  * @param {OverlayParams} [overlay]
  * @param {OverlayMaps} [overlayMaps]
  */
@@ -64,6 +64,10 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
   if (normalDetail) {
     const dView = cameraViewMatrix.mul(vec4(normalDetail, 0)).xyz;
     mat.normalNode = normalize(normalView.add(dView.mul(0.65)));
+  }
+
+  if (maps.ao) {
+    mat.aoNode = triplanarTexture(texture(maps.ao), null, null, triScale).r;
   }
 
   if ((overlay.moss ?? 0) > 0 || (overlay.snow ?? 0) > 0) {
@@ -149,11 +153,12 @@ export async function loadRockTextures(preset, loader) {
     }
   };
 
-  const [albedo, normal, roughness] = await Promise.all([
+  const [albedo, normal, roughness, ao] = await Promise.all([
     load(textures.albedo, true),
     load(textures.normal ?? `${base}_normal.png`, false),
     load(textures.roughness ?? `${base}_roughness.png`, false),
+    load(textures.ao ?? `${base}_ao.png`, false),
   ]);
 
-  return { albedo, normal, roughness };
+  return { albedo, normal, roughness, ao };
 }
