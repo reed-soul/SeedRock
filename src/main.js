@@ -5,6 +5,7 @@ import { loadOverlayTextures } from './materials/overlays.js';
 import { downloadGLB } from './export/glb.js';
 import { SPECIES, DEFAULT_SPECIES } from './species/index.js';
 import { buildGUI, applyOverrides, createDefaultState } from './ui/controls.js';
+import { applyUrlState } from './ui/url-state.js';
 import { buildLivingScene, buildHeroRock, disposeLivingScene, disposeHeroRock } from './generator/scene-build.js';
 import { generateRockGeometry } from './generator/mesh.js';
 import { BakeService } from './core/bake-service.js';
@@ -48,6 +49,7 @@ async function main() {
 
   const { scene, camera, renderer, controls } = sceneCtx;
   const state = createDefaultState();
+  applyUrlState(state);
   const texLoader = new THREE.TextureLoader();
   const textureCache = new Map();
   const bakeService = new BakeService();
