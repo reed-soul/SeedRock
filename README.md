@@ -10,14 +10,14 @@
 
 A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF.
 
-> **Status: `1.0`.** Eight rock types, full LOD + impostor pipeline, AI texture workflow, tests, and community docs.
+> **Status: `1.1`.** Nine rock types, moss & snow overlay textures, full LOD + impostor pipeline, AI texture workflow, tests, and community docs.
 
 ## Features
 
 - **Eight rock types** — Granite, Sandstone, Limestone, Basalt, Volcanic, Glacial, River Cobble, Karst
 - **Erosion simulation** — hydraulic, thermal, and edge-wear passes
 - **PBR textures** — procedural defaults + AI ingest pipeline
-- **Moss / snow overlays** — slope-driven biome cover
+- **Moss / snow overlays** — slope-driven biome cover with dedicated PBR texture sets
 - **LOD chain** — mesh LODs + off-thread billboard impostor bake
 - **glTF export** — MSFT_lod extension with `_LOD0`…`_LOD3` naming
 - **Living scene** — cliff face + scatter boulders
@@ -26,7 +26,6 @@ A fully procedural rock and cliff generator: pick a rock type, tune its paramete
 
 - Community-submitted species presets ([CONTRIBUTING.md](CONTRIBUTING.md))
 - Optional ambient-occlusion maps
-- Snow dedicated overlay textures
 
 ## Requirements
 
@@ -109,6 +108,7 @@ Following the same cross-agent collaboration model as [SeedThree](https://github
 - [x] glTF export
 - [x] Additional rock types (5+)
 - [x] Moss / lichen overlay system
+- [x] Snow overlay textures
 - [x] LOD chain + impostor baking
 - [x] Living scene (cliff face + scatter)
 - [x] GitHub Pages live demo
