@@ -20,6 +20,7 @@ const SPECIES = {
   glacial: { rgb: [138, 147, 156], var: 22, grain: 0.13, pore: 0.05, roughBase: 0.84 },
   river_cobble: { rgb: [122, 117, 110], var: 20, grain: 0.09, pore: 0.03, roughBase: 0.78 },
   karst: { rgb: [200, 192, 176], var: 24, grain: 0.18, pore: 0.14, roughBase: 0.88 },
+  schist: { rgb: [110, 106, 98], var: 26, grain: 0.15, pore: 0.04, roughBase: 0.89 },
 };
 
 function hash(x, y, seed) {

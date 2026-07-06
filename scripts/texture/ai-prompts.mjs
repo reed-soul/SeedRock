@@ -43,6 +43,11 @@ const PROMPTS = {
     normal: 'karst limestone normal map, deep pits and sharp karren ridges, tileable 512x512',
     roughness: 'karst rock roughness map, varied weathered limestone, tileable grayscale 512x512',
   },
+  schist: {
+    albedo: 'seamless schist metamorphic rock texture, dark gray flaky foliated layers, mica flecks, flat lit tileable PBR albedo 512x512',
+    normal: 'schist rock normal map, fine foliation lamination bumps, tileable 512x512',
+    roughness: 'schist roughness map, layered matte metamorphic stone, tileable grayscale 512x512',
+  },
 };
 
 const speciesArg = process.argv.includes('--species')

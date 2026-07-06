@@ -61,7 +61,7 @@ npm run build
 
 ### 5. Open a PR
 
-- One species per PR is preferred
+- One species per PR is preferred (see PR #14 for a complete example: **Schist**)
 - Include a screenshot or short clip of the rock in the viewer
 - List the seed you used for the hero screenshot
 
