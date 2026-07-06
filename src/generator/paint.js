@@ -69,6 +69,7 @@ export class PaintBrush {
     this.getTerrain = opts.getTerrain;
 
     this.params = { spacing: 0.3, scaleMin: 0.15, scaleMax: 0.45, randomRot: true };
+    this.style = 'pbr';
     this.enabled = false;
 
     this.ray = new Raycaster();
@@ -117,7 +118,7 @@ export class PaintBrush {
           amplitude: preset.noise.amplitude * rng.range(0.8, 1.2),
         },
       };
-      const geo = generateRockGeometry(subPreset, `${vi}`);
+      const geo = generateRockGeometry(subPreset, `${vi}`, { style: this.style });
       geo.computeBoundingBox();
       return geo;
     });
@@ -135,6 +136,10 @@ export class PaintBrush {
 
   setParams(p) {
     Object.assign(this.params, p);
+  }
+
+  setStyle(style) {
+    this.style = style;
   }
 
   enable() {

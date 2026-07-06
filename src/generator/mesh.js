@@ -14,12 +14,14 @@ const _v = new Vector3();
  * Generate a procedural rock mesh from a species preset and seed.
  * @param {RockPreset} preset
  * @param {string|number} seed
+ * @param {{ style?: 'pbr'|'lowpoly'|'toon' }} [opts]
  * @returns {import('three').BufferGeometry}
  */
-export function generateRockGeometry(preset, seed) {
+export function generateRockGeometry(preset, seed, opts = {}) {
   const rng = new Rng(`${preset.id}:${seed}`);
   const { shape, noise: noiseParams, erosion } = preset;
   const noise = makeNoise3D(rng.int(1, 1_000_000));
+  const isLowpoly = opts.style === 'lowpoly';
 
   const geo = mergeVertices(new IcosahedronGeometry(shape.radius, shape.detail));
   const pos = geo.attributes.position;
@@ -68,6 +70,13 @@ export function generateRockGeometry(preset, seed) {
   geo.computeVertexNormals();
   applyErosion(geo, erosion, rng);
 
+  if (isLowpoly) {
+    // flatShading derives face normals per triangle in the material; a vertex
+    // normal attribute would override that, so drop it and let the renderer
+    // compute flat per-face normals from positions.
+    geo.deleteAttribute('normal');
+  }
+
   geo.computeBoundingSphere();
   geo.computeBoundingBox();
   return geo;
@@ -78,9 +87,9 @@ export function generateRockGeometry(preset, seed) {
  * @param {string|number} seed
  * @returns {{ geometry: import('three').BufferGeometry, seed: string|number, preset: RockPreset }}
  */
-export function buildRock(preset, seed) {
+export function buildRock(preset, seed, opts = {}) {
   return {
-    geometry: generateRockGeometry(preset, seed),
+    geometry: generateRockGeometry(preset, seed, opts),
     seed,
     preset,
   };

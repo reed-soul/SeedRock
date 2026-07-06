@@ -1,5 +1,6 @@
 import {
-  MeshStandardNodeMaterial, BackSide, Color, RepeatWrapping, SRGBColorSpace, NoColorSpace,
+  MeshStandardNodeMaterial, MeshToonNodeMaterial, BackSide, Color,
+  RepeatWrapping, SRGBColorSpace, NoColorSpace, DataTexture,
 } from 'three/webgpu';
 import {
   texture, triplanarTexture, float, vec3, vec4, normalView, normalWorld, normalize,
@@ -13,19 +14,48 @@ import { textureUrl } from '../core/textures.js';
  *   mossAlbedo?: import('three').Texture, mossNormal?: import('three').Texture, mossRoughness?: import('three').Texture,
  *   snowAlbedo?: import('three').Texture, snowNormal?: import('three').Texture, snowRoughness?: import('three').Texture,
  * }} OverlayMaps
+ * @typedef {'pbr'|'lowpoly'|'toon'} RockStyle
  */
+
+// Toon ramp: a small 1D gradient map sampled by NdotL. 4 bands read as a clean
+// cel-shade; cloned per-material so consumers can mutate without cross-talk.
+let _toonRampBase = null;
+function makeToonRamp() {
+  if (!_toonRampBase) {
+    // 4 hard bands: shadow / mid-low / mid-high / highlight. NearestFilter keeps
+    // the steps crisp; the toon material samples the r channel by NoL.
+    const data = new Uint8Array([60, 120, 200, 255]);
+    _toonRampBase = new DataTexture(data, 4, 1);
+    _toonRampBase.needsUpdate = true;
+  }
+  const ramp = _toonRampBase.clone();
+  ramp.needsUpdate = true;
+  return ramp;
+}
 
 /**
  * @param {import('../species/granite.js').RockPreset} preset
  * @param {{ albedo?: import('three').Texture, normal?: import('three').Texture, roughness?: import('three').Texture, ao?: import('three').Texture }} maps
  * @param {OverlayParams} [overlay]
  * @param {OverlayMaps} [overlayMaps]
+ * @param {{ style?: RockStyle }} [opts]
  */
-export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = {}) {
-  const mat = new MeshStandardNodeMaterial({
-    roughness: preset.roughness,
-    metalness: preset.metalness,
-  });
+export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = {}, opts = {}) {
+  const style = opts.style ?? 'pbr';
+  const isLowpoly = style === 'lowpoly';
+  const isToon = style === 'toon';
+  // flatShading derives face normals per triangle — the per-pixel normalNode
+  // perturbation is ignored, so skip building it (saves work + avoids artifacts).
+  // Toon lighting also ignores fine normal detail (it bands by NoL).
+  const useNormalDetail = !isLowpoly && !isToon;
+
+  const mat = isToon
+    ? new MeshToonNodeMaterial({ gradientMap: makeToonRamp() })
+    : new MeshStandardNodeMaterial({
+        roughness: preset.roughness,
+        metalness: preset.metalness,
+      });
+  if (isLowpoly) mat.flatShading = true;
   mat.shadowSide = BackSide;
 
   const triScale = float(preset.textures?.triplanarScale ?? 0.45);
@@ -43,7 +73,7 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
     if (maps.roughness) {
       roughnessNode = triplanarTexture(texture(maps.roughness), null, null, triScale).g;
     }
-    if (maps.normal) {
+    if (maps.normal && useNormalDetail) {
       const d = triplanarTexture(texture(maps.normal), null, null, triScale).xyz.mul(2).sub(vec3(1, 1, 2));
       normalDetail = d;
     }
@@ -88,7 +118,7 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
         roughnessNode = mix(roughnessNode, float(0.88), mossMask.mul(0.3));
       }
 
-      if (overlayMaps.mossNormal) {
+      if (overlayMaps.mossNormal && useNormalDetail) {
         const mossN = triplanarTexture(texture(overlayMaps.mossNormal), null, null, mossScale).xyz.mul(2).sub(vec3(1, 1, 2));
         const mossView = cameraViewMatrix.mul(vec4(mossN, 0)).xyz;
         const baseNormal = mat.normalNode ?? normalView;
@@ -113,7 +143,7 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
         roughnessNode = mix(roughnessNode, float(0.98), snowMask.mul(0.6));
       }
 
-      if (overlayMaps.snowNormal) {
+      if (overlayMaps.snowNormal && useNormalDetail) {
         const snowN = triplanarTexture(texture(overlayMaps.snowNormal), null, null, snowScale).xyz.mul(2).sub(vec3(1, 1, 2));
         const snowView = cameraViewMatrix.mul(vec4(snowN, 0)).xyz;
         const baseNormal = mat.normalNode ?? normalView;
