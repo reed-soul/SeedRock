@@ -22,6 +22,11 @@ const SPECIES = {
   river_cobble: { rgb: [122, 117, 110], var: 20, grain: 0.09, pore: 0.03, roughBase: 0.78 },
   karst: { rgb: [200, 192, 176], var: 24, grain: 0.18, pore: 0.14, roughBase: 0.88 },
   schist: { rgb: [110, 106, 98], var: 26, grain: 0.15, pore: 0.04, roughBase: 0.89 },
+  slate: { rgb: [58, 63, 74], var: 16, grain: 0.1, pore: 0.03, roughBase: 0.86 },
+  crystal: { rgb: [184, 212, 232], var: 14, grain: 0.06, pore: 0.02, roughBase: 0.18 },
+  marble: { rgb: [232, 228, 220], var: 12, grain: 0.05, pore: 0.02, roughBase: 0.28 },
+  obsidian: { rgb: [20, 22, 26], var: 8, grain: 0.04, pore: 0.01, roughBase: 0.14 },
+  ore: { rgb: [90, 107, 120], var: 24, grain: 0.16, pore: 0.05, roughBase: 0.4 },
 };
 
 function hash(x, y, seed) {
