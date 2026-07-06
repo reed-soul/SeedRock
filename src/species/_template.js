@@ -19,6 +19,7 @@ export const template = {
     albedo: 'my_rock_albedo.png',
     normal: 'my_rock_normal.png',
     roughness: 'my_rock_roughness.png',
+  // ao: 'my_rock_ao.png',   // optional — auto-loaded from <prefix>_ao.png when present
     triplanarScale: 0.45,
   },
 

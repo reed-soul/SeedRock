@@ -8,6 +8,7 @@
 //   granite_albedo.png | granite_albedo.jpg
 //   granite_normal.png
 //   granite_roughness.png
+//   granite_ao.png          (optional — cavity darkening in crevices)
 //
 // Species ids with camelCase (riverCobble) map to river_cobble_* files.
 
@@ -57,7 +58,7 @@ if (!SPECIES_IDS.includes(prefix)) {
 
 await mkdir(OUT_DIR, { recursive: true });
 
-const channels = ['albedo', 'normal', 'roughness'];
+const channels = ['albedo', 'normal', 'roughness', 'ao'];
 let copied = 0;
 
 for (const ch of channels) {
