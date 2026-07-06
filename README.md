@@ -10,7 +10,7 @@
 
 A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF.
 
-> **Status: `pre-alpha`.** Core architecture and first rock types in progress. Star to follow along!
+> **Status: `alpha`.** Core generator, first rock types, GUI, and glTF export are working. AI textures and cliff scenes coming next.
 
 ## What's planned
 
@@ -85,12 +85,12 @@ Following the same cross-agent collaboration model as [SeedThree](https://github
 ## Roadmap
 
 - [x] Repo init & architecture design
-- [ ] Core noise-based mesh generator
-- [ ] Hydraulic erosion simulation
-- [ ] First rock type: Granite
-- [ ] PBR material pipeline (albedo + normal + roughness)
-- [ ] lil-gui control panel
-- [ ] glTF export
+- [x] Core noise-based mesh generator
+- [x] Hydraulic erosion simulation
+- [x] First rock type: Granite
+- [x] PBR material pipeline (procedural fallback; texture-ready triplanar)
+- [x] lil-gui control panel
+- [x] glTF export
 - [ ] Additional rock types (5+)
 - [ ] Moss / lichen overlay system
 - [ ] LOD chain + impostor baking
