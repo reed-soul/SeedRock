@@ -7,14 +7,14 @@ import { buildScatter, disposeScatter } from './scatter.js';
  * @param {import('../species/granite.js').RockPreset} preset
  * @param {string|number} seed
  * @param {import('three').Material} material
- * @param {{ scatterCount?: number, bakeBillboard?: boolean, renderer?: import('three/webgpu').WebGPURenderer, bakeOpts?: object }} opts
+ * @param {object} opts
  */
 export async function buildLivingScene(preset, seed, material, opts = {}) {
   const root = new Group();
   root.name = 'living_scene';
 
   const cliffMat = material.clone();
-  root.add(buildCliff(preset, `${seed}:cliff`, cliffMat));
+  root.add(buildCliff(preset, `${seed}:cliff`, cliffMat, { quality: opts.quality }));
 
   const hero = await buildHeroRock(preset, seed, material, opts);
   hero.position.set(0, 0, 1.2);
@@ -22,6 +22,7 @@ export async function buildLivingScene(preset, seed, material, opts = {}) {
 
   const scatter = buildScatter(preset, `${seed}:scatter`, material, {
     count: opts.scatterCount ?? 14,
+    quality: opts.quality,
   });
   root.add(scatter);
 
@@ -46,11 +47,15 @@ export function disposeLivingScene(root) {
  * @param {import('../species/granite.js').RockPreset} preset
  * @param {string|number} seed
  * @param {import('three').Material} material
- * @param {{ bakeBillboard?: boolean, renderer?: import('three/webgpu').WebGPURenderer, bakeOpts?: object }} [opts]
+ * @param {object} [opts]
  */
 export async function buildHeroRock(preset, seed, material, opts = {}) {
   if (opts.bakeBillboard && opts.renderer) {
-    const lod = await buildRockLODAsync(opts.renderer, preset, seed, material, opts.bakeOpts);
+    const lod = await buildRockLODAsync(opts.renderer, preset, seed, material, {
+      ...opts.bakeOpts,
+      bakeService: opts.bakeService,
+      maps: opts.maps,
+    });
     lod.name = 'hero_rock';
     return lod;
   }
