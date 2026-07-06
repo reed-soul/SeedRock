@@ -8,17 +8,17 @@ import {
 import { textureUrl } from '../core/textures.js';
 
 /**
- * @typedef {{ moss?: number, snow?: number }} OverlayParams
+ * @typedef {{ moss?: number, snow?: number, useMossTexture?: boolean }} OverlayParams
+ * @typedef {{ mossAlbedo?: import('three').Texture, mossNormal?: import('three').Texture, mossRoughness?: import('three').Texture }} OverlayMaps
  */
 
 /**
- * Procedural rock material — triplanar PBR when textures exist, otherwise
- * world-space noise tinting over the species base color.
  * @param {import('../species/granite.js').RockPreset} preset
  * @param {{ albedo?: import('three').Texture, normal?: import('three').Texture, roughness?: import('three').Texture }} maps
  * @param {OverlayParams} [overlay]
+ * @param {OverlayMaps} [overlayMaps]
  */
-export function makeRockMaterial(preset, maps = {}, overlay = {}) {
+export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = {}) {
   const mat = new MeshStandardNodeMaterial({
     roughness: preset.roughness,
     metalness: preset.metalness,
@@ -28,9 +28,11 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}) {
   const triScale = float(preset.textures?.triplanarScale ?? 0.45);
   const mossAmt = float(overlay.moss ?? 0);
   const snowAmt = float(overlay.snow ?? 0);
+  const useMossTex = overlay.useMossTexture !== false;
 
   let colorNode;
   let roughnessNode = float(preset.roughness);
+  let normalDetail = null;
 
   if (maps.albedo) {
     colorNode = triplanarTexture(texture(maps.albedo), null, null, triScale);
@@ -39,8 +41,7 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}) {
     }
     if (maps.normal) {
       const d = triplanarTexture(texture(maps.normal), null, null, triScale).xyz.mul(2).sub(vec3(1, 1, 2));
-      const dView = cameraViewMatrix.mul(vec4(d, 0)).xyz;
-      mat.normalNode = normalize(normalView.add(dView.mul(0.65)));
+      normalDetail = d;
     }
   } else {
     const base = new Color(preset.color);
@@ -56,17 +57,44 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}) {
     roughnessNode = add(float(preset.roughness), grain.mul(0.08));
   }
 
+  if (normalDetail) {
+    const dView = cameraViewMatrix.mul(vec4(normalDetail, 0)).xyz;
+    mat.normalNode = normalize(normalView.add(dView.mul(0.65)));
+  }
+
   if ((overlay.moss ?? 0) > 0 || (overlay.snow ?? 0) > 0) {
     const up = vec3(0, 1, 0);
     const slope = clamp(normalWorld.dot(up), float(0), float(1));
     const mossMask = smoothstep(float(0.32), float(0.7), slope).mul(mossAmt);
     const snowMask = smoothstep(float(0.55), float(0.9), slope).mul(snowAmt);
-    const mossColor = vec3(0.2, 0.36, 0.16);
+
+    if (useMossTex && overlayMaps.mossAlbedo && (overlay.moss ?? 0) > 0) {
+      const mossScale = float(0.55);
+      const mossColor = triplanarTexture(texture(overlayMaps.mossAlbedo), null, null, mossScale);
+      colorNode = mix(colorNode, mossColor, mossMask);
+
+      if (overlayMaps.mossRoughness) {
+        const mossRough = triplanarTexture(texture(overlayMaps.mossRoughness), null, null, mossScale).g;
+        roughnessNode = mix(roughnessNode, mossRough, mossMask);
+      } else {
+        roughnessNode = mix(roughnessNode, float(0.88), mossMask.mul(0.3));
+      }
+
+      if (overlayMaps.mossNormal) {
+        const mossN = triplanarTexture(texture(overlayMaps.mossNormal), null, null, mossScale).xyz.mul(2).sub(vec3(1, 1, 2));
+        const mossView = cameraViewMatrix.mul(vec4(mossN, 0)).xyz;
+        const baseNormal = mat.normalNode ?? normalView;
+        mat.normalNode = normalize(mix(baseNormal, normalize(baseNormal.add(mossView.mul(0.5))), mossMask));
+      }
+    } else if ((overlay.moss ?? 0) > 0) {
+      const mossColor = vec3(0.2, 0.36, 0.16);
+      colorNode = mix(colorNode, mossColor, mossMask);
+      roughnessNode = mix(roughnessNode, float(0.88), mossMask.mul(0.3));
+    }
+
     const snowColor = vec3(0.91, 0.93, 0.96);
-    colorNode = mix(colorNode, mossColor, mossMask);
     colorNode = mix(colorNode, snowColor, snowMask);
     roughnessNode = mix(roughnessNode, float(0.98), snowMask.mul(0.6));
-    roughnessNode = mix(roughnessNode, float(0.88), mossMask.mul(0.3));
   }
 
   mat.colorNode = colorNode;
@@ -76,7 +104,6 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}) {
 }
 
 /**
- * Load optional PBR textures for a species preset.
  * @param {import('../species/granite.js').RockPreset} preset
  * @param {import('three').TextureLoader} loader
  */

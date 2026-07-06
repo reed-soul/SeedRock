@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(__dirname, '../../public/assets/textures');
+const OVERLAY_DIR = path.join(OUT_DIR, 'overlays');
 const SIZE = 512;
 
 const SPECIES = {
@@ -63,10 +64,55 @@ function heightAt(x, y, seed, cfg) {
   return layer * cfg.grain + grain * cfg.grain * 0.4 - pore * cfg.pore;
 }
 
-async function writePng(name, rgba, w = SIZE, h = SIZE) {
+async function writePng(name, rgba, w = SIZE, h = SIZE, dir = OUT_DIR) {
   await sharp(Buffer.from(rgba), { raw: { width: w, height: h, channels: 4 } })
     .png()
-    .toFile(path.join(OUT_DIR, name));
+    .toFile(path.join(dir, name));
+}
+
+async function generateMossOverlay(seed) {
+  const albedo = new Uint8Array(SIZE * SIZE * 4);
+  const normal = new Uint8Array(SIZE * SIZE * 4);
+  const roughness = new Uint8Array(SIZE * SIZE * 4);
+  const heights = new Float32Array(SIZE * SIZE);
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const u = x / SIZE, v = y / SIZE;
+      heights[y * SIZE + x] = fbm(u, v, seed, 6) * 0.6 + fbm(u * 4.2, v * 4.2, seed + 7, 3) * 0.4;
+    }
+  }
+
+  const sampleH = (x, y) => heights[Math.max(0, Math.min(SIZE - 1, y)) * SIZE + Math.max(0, Math.min(SIZE - 1, x))];
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const i = (y * SIZE + x) * 4;
+      const n = fbm(x / SIZE, y / SIZE, seed + 3, 5);
+      const clump = fbm(x * 5.1 / SIZE, y * 5.1 / SIZE, seed + 9, 3);
+      albedo[i] = Math.round(28 + n * 35 + clump * 20);
+      albedo[i + 1] = Math.round(72 + n * 55 + clump * 35);
+      albedo[i + 2] = Math.round(24 + n * 25 + clump * 12);
+      albedo[i + 3] = 255;
+
+      const dhdx = sampleH(x + 1, y) - sampleH(x - 1, y);
+      const dhdy = sampleH(x, y + 1) - sampleH(x, y - 1);
+      const nx = -dhdx * 5, ny = -dhdy * 5, nz = 1;
+      const len = Math.hypot(nx, ny, nz);
+      normal[i] = Math.round((nx / len) * 0.5 * 255 + 128);
+      normal[i + 1] = Math.round((ny / len) * 0.5 * 255 + 128);
+      normal[i + 2] = Math.round((nz / len) * 0.5 * 255 + 255);
+      normal[i + 3] = 255;
+
+      const rough = Math.round((0.82 + n * 0.12) * 255);
+      roughness[i] = rough; roughness[i + 1] = rough; roughness[i + 2] = rough; roughness[i + 3] = 255;
+    }
+  }
+
+  await writePng('moss_albedo.png', albedo, SIZE, SIZE, OVERLAY_DIR);
+  await writePng('moss_normal.png', normal, SIZE, SIZE, OVERLAY_DIR);
+  await writePng('moss_roughness.png', roughness, SIZE, SIZE, OVERLAY_DIR);
+  console.log('  ✓ moss overlay');
 }
 
 async function generateSpecies(id, cfg, seed) {
@@ -130,10 +176,13 @@ async function generateSpecies(id, cfg, seed) {
 }
 
 await mkdir(OUT_DIR, { recursive: true });
+await mkdir(OVERLAY_DIR, { recursive: true });
 console.log(`Generating PBR textures → ${OUT_DIR}`);
 let seed = 42;
 for (const [id, cfg] of Object.entries(SPECIES)) {
   await generateSpecies(id, cfg, seed);
   seed += 1337;
 }
+console.log('Generating overlay textures →', OVERLAY_DIR);
+await generateMossOverlay(9001);
 console.log('Done.');
