@@ -19,7 +19,7 @@
     "textures:ingest": "node scripts/texture/ingest-ai.mjs",
     "textures:prompts": "node scripts/texture/ai-prompts.mjs",
     "textures:derive": "node scripts/texture/derive-pbr.mjs",
-    "test": "node --test \"tests/**/*.test.js\""
+    "test": "node --test"
   },
   "dependencies": {
     "lil-gui": "^0.21.0",
