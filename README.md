@@ -4,13 +4,13 @@
 
 **Open-source procedural rock & cliff generator for the web, built on Three.js (WebGPU).**
 
-**▶ [Live Demo (coming soon)](https://reed-soul.github.io/SeedRock/)** &nbsp;(WebGPU-capable browser required — Chrome/Edge 113+)
+**▶ [Live Demo](https://reed-soul.github.io/SeedRock/)** &nbsp;(WebGPU-capable browser required — Chrome/Edge 113+)
 
 </div>
 
 A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF.
 
-> **Status: `alpha`.** Core generator, first rock types, GUI, and glTF export are working. AI textures and cliff scenes coming next.
+> **Status: `beta`.** Five rock types, PBR textures, moss/snow overlays, LOD, living cliff scene, and GitHub Pages deploy.
 
 ## What's planned
 
@@ -31,7 +31,8 @@ A fully procedural rock and cliff generator: pick a rock type, tune its paramete
 
 ```bash
 npm install
-npm run dev      # http://localhost:5390
+npm run textures   # generate procedural PBR maps (first time / after species changes)
+npm run dev        # http://localhost:5390
 ```
 
 ```bash
@@ -51,9 +52,11 @@ src/
 ├── ui/             # lil-gui control panel
 └── main.js         # Entry point
 assets/
-├── textures/       # AI-generated rock textures
+└── (legacy)        # use public/assets/textures for generated PBR maps
+public/
+└── assets/textures/  # PBR maps (npm run textures)
 scripts/
-└── texture/        # Texture generation & processing pipeline
+└── texture/        # Texture generation pipeline
 ```
 
 ## Adding a rock type
@@ -91,11 +94,11 @@ Following the same cross-agent collaboration model as [SeedThree](https://github
 - [x] PBR material pipeline (procedural fallback; texture-ready triplanar)
 - [x] lil-gui control panel
 - [x] glTF export
-- [ ] Additional rock types (5+)
-- [ ] Moss / lichen overlay system
-- [ ] LOD chain + impostor baking
-- [ ] Living scene (cliff face + scatter)
-- [ ] GitHub Pages live demo
+- [x] Additional rock types (5+)
+- [x] Moss / lichen overlay system
+- [x] LOD chain + impostor baking
+- [x] Living scene (cliff face + scatter)
+- [x] GitHub Pages live demo
 
 ## License
 
