@@ -26,7 +26,7 @@ A fully procedural rock and cliff generator: pick a rock type, tune its paramete
 
 - Community-submitted species presets ([CONTRIBUTING.md](CONTRIBUTING.md))
 - Optional ambient-occlusion maps
-- Moss/lichen dedicated overlay textures
+- Snow dedicated overlay textures
 
 ## Requirements
 
