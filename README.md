@@ -21,19 +21,19 @@ The live viewer opens to a **curated Karst canyon** — cliff face, scattered bo
 <div align="center">
 <table>
 <tr>
-<td align="center"><a href="?species=granite&seed=42&scene=living&moss=0.15"><img src="docs/images/shots/granite.png" width="200"><br><sub>Granite</sub></a></td>
-<td align="center"><a href="?species=sandstone&seed=117&scene=living"><img src="docs/images/shots/sandstone.png" width="200"><br><sub>Sandstone</sub></a></td>
-<td align="center"><a href="?species=basalt&seed=88&scene=living"><img src="docs/images/shots/basalt.png" width="200"><br><sub>Basalt</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=granite&seed=42&scene=living&moss=0.15"><img src="docs/images/shots/granite.png" width="200"><br><sub>Granite</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=sandstone&seed=117&scene=living"><img src="docs/images/shots/sandstone.png" width="200"><br><sub>Sandstone</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=basalt&seed=88&scene=living"><img src="docs/images/shots/basalt.png" width="200"><br><sub>Basalt</sub></a></td>
 </tr>
 <tr>
-<td align="center"><a href="?species=limestone&seed=204&scene=living&moss=0.10"><img src="docs/images/shots/limestone.png" width="200"><br><sub>Limestone</sub></a></td>
-<td align="center"><a href="?species=volcanic&seed=13&scene=living"><img src="docs/images/shots/volcanic.png" width="200"><br><sub>Volcanic</sub></a></td>
-<td align="center"><a href="?species=glacial&seed=3310&scene=living&moss=0.30"><img src="docs/images/shots/glacial.png" width="200"><br><sub>Glacial</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=limestone&seed=204&scene=living&moss=0.10"><img src="docs/images/shots/limestone.png" width="200"><br><sub>Limestone</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=volcanic&seed=13&scene=living"><img src="docs/images/shots/volcanic.png" width="200"><br><sub>Volcanic</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=glacial&seed=3310&scene=living&moss=0.30"><img src="docs/images/shots/glacial.png" width="200"><br><sub>Glacial</sub></a></td>
 </tr>
 <tr>
-<td align="center"><a href="?species=river_cobble&seed=77&scene=living&moss=0.20"><img src="docs/images/shots/river-cobble.png" width="200"><br><sub>River Cobble</sub></a></td>
-<td align="center"><a href="?species=karst&seed=3310&scene=living&moss=0.18"><img src="docs/images/shots/karst.png" width="200"><br><sub>Karst</sub></a></td>
-<td align="center"><a href="?species=schist&seed=256&scene=living&moss=0.12"><img src="docs/images/shots/schist.png" width="200"><br><sub>Schist</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=river_cobble&seed=77&scene=living&moss=0.20"><img src="docs/images/shots/river-cobble.png" width="200"><br><sub>River Cobble</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=karst&seed=3310&scene=living&moss=0.18"><img src="docs/images/shots/karst.png" width="200"><br><sub>Karst</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=schist&seed=256&scene=living&moss=0.12"><img src="docs/images/shots/schist.png" width="200"><br><sub>Schist</sub></a></td>
 </tr>
 </table>
 </div>
