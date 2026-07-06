@@ -7,6 +7,8 @@ import { glacial } from './glacial.js';
 import { riverCobble } from './river-cobble.js';
 import { karst } from './karst.js';
 import { schist } from './schist.js';
+import { slate } from './slate.js';
+import { crystal } from './crystal.js';
 
 export const SPECIES = {
   granite,
@@ -18,6 +20,8 @@ export const SPECIES = {
   riverCobble,
   karst,
   schist,
+  slate,
+  crystal,
 };
 
 export const DEFAULT_SPECIES = 'karst';
