@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { createScene } from './core/scene.js';
 import { makeRockMaterial, loadRockTextures } from './materials/rock-material.js';
+import { loadOverlayTextures } from './materials/overlays.js';
 import { downloadGLB } from './export/glb.js';
 import { SPECIES, DEFAULT_SPECIES } from './species/index.js';
 import { buildGUI, applyOverrides, createDefaultState } from './ui/controls.js';
@@ -51,6 +52,7 @@ async function main() {
   const textureCache = new Map();
   const bakeService = new BakeService();
   await bakeService.init();
+  const overlayMaps = await loadOverlayTextures(texLoader);
 
   const content = new THREE.Group();
   content.name = 'content';
@@ -102,7 +104,7 @@ async function main() {
     if (gen !== rebuildGen) return;
 
     mapsForBake = maps;
-    currentMaterial = makeRockMaterial(preset, maps, state.overlay);
+    currentMaterial = makeRockMaterial(preset, maps, state.overlay, overlayMaps);
 
     const lodOpts = {
       bakeBillboard: state.useLOD && state.bakeBillboard,
