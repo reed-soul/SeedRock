@@ -10,17 +10,23 @@
 
 A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF.
 
-> **Status: `release-candidate`.** Full LOD pipeline with off-thread impostor baking, MSFT_lod glTF export, and performance controls.
+> **Status: `1.0`.** Eight rock types, full LOD + impostor pipeline, AI texture workflow, tests, and community docs.
 
-## What's planned
+## Features
 
-- **Multiple rock types** — Granite, Sandstone, Limestone, Basalt, Volcanic, Glacial, River Cobble, Karst — each with distinct erosion patterns and surface characteristics.
-- **Erosion simulation** — Hydraulic and thermal erosion sculpt realistic cracks, ridges, overhangs, and talus slopes.
-- **PBR textures** — AI-generated albedo, normal, roughness, and ambient-occlusion maps for each rock type.
-- **Moss / lichen / snow cover** — Optional biome overlays driven by slope angle and ambient parameters.
-- **LOD chain** — Full geometry → reduced → baked-impostor for efficient scene placement.
-- **glTF export** — One-click `.glb` export with merged meshes and standard material extensions.
-- **Living scene** — Procedural cliff face with scatter boulders, debris, and environmental context.
+- **Eight rock types** — Granite, Sandstone, Limestone, Basalt, Volcanic, Glacial, River Cobble, Karst
+- **Erosion simulation** — hydraulic, thermal, and edge-wear passes
+- **PBR textures** — procedural defaults + AI ingest pipeline
+- **Moss / snow overlays** — slope-driven biome cover
+- **LOD chain** — mesh LODs + off-thread billboard impostor bake
+- **glTF export** — MSFT_lod extension with `_LOD0`…`_LOD3` naming
+- **Living scene** — cliff face + scatter boulders
+
+## What's next
+
+- Community-submitted species presets ([CONTRIBUTING.md](CONTRIBUTING.md))
+- Optional ambient-occlusion maps
+- Moss/lichen dedicated overlay textures
 
 ## Requirements
 
@@ -33,13 +39,19 @@ A fully procedural rock and cliff generator: pick a rock type, tune its paramete
 npm install
 npm run textures        # procedural PBR maps
 npm run textures:ingest -- --species granite --dir ./ai-output/  # AI maps
-npm run dev             # http://localhost:5390
+npm run textures:prompts  # AI generation prompts
+npm run dev               # http://localhost:5390
+npm test                  # unit tests
 ```
 
 ```bash
 npm run build    # production bundle in dist/
 npm run preview  # serve the built bundle
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/AI_TEXTURES.md](docs/AI_TEXTURES.md).
 
 ## Architecture
 
@@ -100,6 +112,9 @@ Following the same cross-agent collaboration model as [SeedThree](https://github
 - [x] LOD chain + impostor baking
 - [x] Living scene (cliff face + scatter)
 - [x] GitHub Pages live demo
+- [x] Glacial rock type
+- [x] AI texture prompts + ingest pipeline
+- [x] Community contribution docs + CI tests
 
 ## License
 

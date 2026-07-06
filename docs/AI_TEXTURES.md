@@ -1,0 +1,91 @@
+# AI texture workflow
+
+SeedRock uses **tileable PBR texture sets** per rock species: albedo, normal, and roughness. Procedural placeholders ship by default; AI-generated maps replace them for production quality.
+
+## Pipeline overview
+
+```
+prompts → image model → ingest → public/assets/textures/ → triplanar material
+```
+
+## Step 1 — Get prompts
+
+```bash
+npm run textures:prompts                  # all species
+npm run textures:prompts -- --species granite
+```
+
+Prompts are tuned for **flat-lit, seamless, tileable** game textures. Adjust for your model.
+
+## Step 2 — Generate images
+
+Use any image model that supports tileable textures:
+
+| Tool | Notes |
+|------|-------|
+| **Flux** (Replicate / ComfyUI) | Good mineral detail; use "seamless" + "tileable" |
+| **gpt-image** | Strong at following PBR channel instructions |
+| **SD3 / SDXL** | Use a seamless texture LoRA if available |
+
+Generate three maps per species:
+
+| File | Content |
+|------|---------|
+| `<species>_albedo.png` | Base color, sRGB, no baked lighting |
+| `<species>_normal.png` | Tangent-space normal, linear |
+| `<species>_roughness.png` | Grayscale roughness, linear |
+
+**Tips**
+
+- Keep lighting flat — runtime shading handles sun direction
+- 512×512 or 1024×1024 square PNG
+- Normal maps: classic blue-purple, OpenGL convention (+Y up)
+- Roughness: white = rough, black = smooth
+
+## Step 3 — Ingest
+
+Place files in a folder (any name):
+
+```
+ai-output/
+  granite_albedo.png
+  granite_normal.png
+  granite_roughness.png
+```
+
+```bash
+npm run textures:ingest -- --species granite --dir ./ai-output/
+```
+
+CamelCase ids (`riverCobble`) map to `river_cobble_*` filenames automatically.
+
+## Step 4 — Verify in viewer
+
+```bash
+npm run dev
+```
+
+Select the species in the GUI. Textures load via triplanar projection — no UV unwrapping needed.
+
+## Cross-agent workflow (SeedThree model)
+
+Same collaboration pattern as [SeedThree](https://github.com/SkyeShark/SeedThree):
+
+1. **Coding agent** — preset tuning, erosion params, scene integration
+2. **Image agent** — texture generation from `npm run textures:prompts` output
+3. **Human** — visual review, PR merge
+
+Example handoff to an image agent:
+
+> Generate tileable PBR textures for SeedRock granite. Use these prompts: [paste `npm run textures:prompts -- --species granite` output]. Save as granite_albedo.png, granite_normal.png, granite_roughness.png.
+
+## Fallback
+
+If AI maps are missing, the engine uses:
+
+1. Procedural maps from `npm run textures`
+2. Runtime TSL noise tinting from `preset.color`
+
+## Adding prompts for a new species
+
+Edit `scripts/texture/ai-prompts.mjs` — add an entry keyed by the texture file prefix (e.g. `my_rock`).
