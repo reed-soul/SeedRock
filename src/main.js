@@ -27,8 +27,12 @@ const setLoading = (on, text, frac) => {
   if (frac != null && loadingBar) loadingBar.style.width = `${Math.round(frac * 100)}%`;
 };
 
+const nextPaint = () => new Promise((r) => {
+  requestAnimationFrame(() => requestAnimationFrame(r));
+});
+
 async function main() {
-  setLoading(true, 'Initializing WebGPU…', 0.1);
+  setLoading(true, 'Initializing renderer…', 0.1);
 
   const app = document.getElementById('app');
   if (!app) return fail('Missing #app container');
@@ -37,7 +41,7 @@ async function main() {
   try {
     sceneCtx = await createScene(app);
   } catch (e) {
-    return fail(`WebGPU init failed: ${e.message}\n\nTry Chrome 113+ or Edge with WebGPU enabled.`);
+    return fail(`Renderer init failed:\n${e.message}\n\nTry Chrome 113+ or Edge.`);
   }
 
   const { scene, camera, renderer, controls } = sceneCtx;
@@ -54,6 +58,7 @@ async function main() {
 
   let currentMaterial = null;
   let currentRoot = null;
+  let rebuildGen = 0;
 
   async function loadTextures(preset) {
     const key = preset.id;
@@ -71,9 +76,7 @@ async function main() {
       disposeHeroRock(currentRoot);
     } else {
       currentRoot.traverse((o) => {
-        if (o.isMesh) {
-          o.geometry?.dispose?.();
-        }
+        if (o.isMesh) o.geometry?.dispose?.();
       });
     }
     content.remove(currentRoot);
@@ -83,22 +86,38 @@ async function main() {
   }
 
   async function rebuildRock() {
-    setLoading(true, 'Generating rock…', 0.5);
+    const gen = ++rebuildGen;
+    setLoading(true, 'Generating rock…', 0.35);
     disposeContent();
 
     const base = SPECIES[state.speciesKey] ?? SPECIES[DEFAULT_SPECIES];
     const preset = applyOverrides(base, state);
     const maps = await loadTextures(preset);
+    if (gen !== rebuildGen) return;
+
     currentMaterial = makeRockMaterial(preset, maps, state.overlay);
 
+    const lodOpts = {
+      bakeBillboard: state.useLOD && state.bakeBillboard,
+      renderer,
+      bakeOpts: {
+        yield: nextPaint,
+        onProgress: () => setLoading(true, 'Baking impostor…', 0.7),
+      },
+    };
+
     if (state.sceneMode === 'living') {
-      currentRoot = buildLivingScene(preset, state.seed, currentMaterial, {
+      setLoading(true, 'Building living scene…', 0.5);
+      currentRoot = await buildLivingScene(preset, state.seed, currentMaterial, {
         scatterCount: state.scene.scatterCount,
+        ...lodOpts,
       });
+      if (gen !== rebuildGen) return;
       controls.target.set(0, 1.4, 0);
       camera.position.set(5, 3.2, 7);
     } else if (state.useLOD) {
-      currentRoot = buildHeroRock(preset, state.seed, currentMaterial);
+      currentRoot = await buildHeroRock(preset, state.seed, currentMaterial, lodOpts);
+      if (gen !== rebuildGen) return;
       controls.target.set(0, 1.1, 0);
     } else {
       const geometry = generateRockGeometry(preset, state.seed);
@@ -113,7 +132,6 @@ async function main() {
     content.add(currentRoot);
     controls.update();
 
-    const vertCount = countVertices(currentRoot);
     if (hud) {
       hud.textContent = [
         'SeedRock',
@@ -121,7 +139,8 @@ async function main() {
         `species: ${preset.name}`,
         `seed: ${state.seed}`,
         `mode: ${state.sceneMode}`,
-        `verts: ${vertCount}`,
+        `lod: ${state.useLOD ? (state.bakeBillboard ? 'mesh+billboard' : 'mesh') : 'off'}`,
+        `verts: ${countVertices(currentRoot)}`,
       ].join('\n');
     }
 
@@ -131,7 +150,9 @@ async function main() {
   function countVertices(root) {
     let n = 0;
     root.traverse((o) => {
-      if (o.isMesh) n += o.geometry?.attributes?.position?.count ?? 0;
+      if (o.isMesh && !o.userData?.isBillboardCard) {
+        n += o.geometry?.attributes?.position?.count ?? 0;
+      }
       if (o.isInstancedMesh) n += (o.geometry?.attributes?.position?.count ?? 0) * o.count;
     });
     return n;
@@ -150,7 +171,8 @@ async function main() {
     controls.autoRotate = state.autoRotate;
     controls.autoRotateSpeed = state.autoRotateSpeed;
     controls.update();
-    if (currentRoot?.isLOD) currentRoot.update(camera);
+    const lod = currentRoot?.userData?.hero ?? (currentRoot?.isLOD ? currentRoot : null);
+    if (lod?.isLOD) lod.update(camera);
     renderer.render(scene, camera);
   });
 }
