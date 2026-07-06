@@ -47,6 +47,7 @@ export function buildGUI(ctx) {
   folders.erosion.add(state.erosion, 'edgeWear').name('Edge Wear').onChange(() => ctx.onRegenerate('erosion'));
 
   folders.overlay.add(state.overlay, 'moss', 0, 1, 0.01).name('Moss').onChange(() => ctx.onRegenerate('overlay'));
+  folders.overlay.add(state.overlay, 'useMossTexture').name('Moss Texture').onChange(() => ctx.onRegenerate('overlay'));
   folders.overlay.add(state.overlay, 'snow', 0, 1, 0.01).name('Snow').onChange(() => ctx.onRegenerate('overlay'));
 
   folders.scene.add(state, 'sceneMode', { Single: 'single', Living: 'living' }).name('Mode').onChange(() => ctx.onRegenerate('scene'));
@@ -112,7 +113,7 @@ export function createDefaultState() {
     seed: 42,
     shape: { radius: 1, detail: 4, squash: 0.88, amplitude: 0.28 },
     erosion: { thermal: true, hydraulic: true, edgeWear: true },
-    overlay: { moss: 0, snow: 0 },
+    overlay: { moss: 0, snow: 0, useMossTexture: true },
     sceneMode: 'single',
     scene: { scatterCount: 14 },
     useLOD: true,
