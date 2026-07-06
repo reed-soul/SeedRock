@@ -19,7 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(__dirname, '../../public/assets/textures');
 
 const SPECIES_IDS = [
-  'granite', 'sandstone', 'basalt', 'limestone', 'volcanic', 'glacial', 'river_cobble', 'karst',
+  'granite', 'sandstone', 'basalt', 'limestone', 'volcanic', 'glacial', 'river_cobble', 'karst', 'schist',
 ];
 
 function parseArgs(argv) {
