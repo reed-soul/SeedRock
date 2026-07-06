@@ -12,4 +12,9 @@ describe('textureUrl', () => {
     const url = overlayTextureUrl('moss_albedo.png');
     assert.ok(url.endsWith('assets/textures/overlays/moss_albedo.png'));
   });
+
+  it('builds snow overlay path', () => {
+    const url = overlayTextureUrl('snow_albedo.png');
+    assert.ok(url.endsWith('assets/textures/overlays/snow_albedo.png'));
+  });
 });

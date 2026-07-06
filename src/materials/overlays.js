@@ -4,7 +4,7 @@ import { overlayTextureUrl } from '../core/textures.js';
 let cached = null;
 
 /**
- * Load shared biome overlay textures (moss). Cached after first load.
+ * Load shared biome overlay textures (moss, snow). Cached after first load.
  * @param {import('three').TextureLoader} loader
  */
 export async function loadOverlayTextures(loader) {
@@ -22,13 +22,22 @@ export async function loadOverlayTextures(loader) {
     }
   };
 
-  const [mossAlbedo, mossNormal, mossRoughness] = await Promise.all([
+  const [
+    mossAlbedo, mossNormal, mossRoughness,
+    snowAlbedo, snowNormal, snowRoughness,
+  ] = await Promise.all([
     load('moss_albedo.png', true),
     load('moss_normal.png', false),
     load('moss_roughness.png', false),
+    load('snow_albedo.png', true),
+    load('snow_normal.png', false),
+    load('snow_roughness.png', false),
   ]);
 
-  cached = { mossAlbedo, mossNormal, mossRoughness };
+  cached = {
+    mossAlbedo, mossNormal, mossRoughness,
+    snowAlbedo, snowNormal, snowRoughness,
+  };
   return cached;
 }
 
