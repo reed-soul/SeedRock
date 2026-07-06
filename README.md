@@ -4,7 +4,7 @@
 
 **Open-source procedural rock & cliff generator for the web, built on Three.js (WebGPU).**
 
-**▶ [Live Demo](https://reed-soul.github.io/SeedRock/)** &nbsp;(WebGPU-capable browser required — Chrome/Edge 113+)
+**▶ [Live Demo](https://reed-soul.github.io/SeedRock/)** · **[Examples Gallery](https://reed-soul.github.io/SeedRock/examples.html)** &nbsp;(WebGPU-capable browser required — Chrome/Edge 113+)
 
 </div>
 
@@ -38,7 +38,7 @@ npm install
 npm run textures        # procedural PBR maps
 npm run textures:ingest -- --species granite --dir ./ai-output/  # AI maps
 npm run textures:prompts  # AI generation prompts
-npm run dev               # http://localhost:5390
+npm run dev               # http://localhost:5390  ·  examples at /examples.html
 npm test                  # unit tests
 ```
 
