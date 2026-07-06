@@ -10,7 +10,7 @@
 
 A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF.
 
-> **Status: `beta`.** Seven rock types, billboard impostor baking, AI texture ingest, WebGL2 fallback.
+> **Status: `release-candidate`.** Full LOD pipeline with off-thread impostor baking, MSFT_lod glTF export, and performance controls.
 
 ## What's planned
 

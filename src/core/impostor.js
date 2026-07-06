@@ -76,6 +76,18 @@ async function probeReadbackRowOrder(renderer) {
 }
 
 function pixelsToTexture(pixels, size, dilatePasses, srgb, flip) {
+  const data = processPixels(pixels, size, dilatePasses, srgb, flip);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  canvas.getContext('2d').putImageData(new ImageData(data, size, size), 0, 0);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = srgb ? SRGBColorSpace : NoColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/** DOM-free pixel post-process — usable in workers. */
+export function processPixels(pixels, size, dilatePasses, srgb, flip) {
   const data = new Uint8ClampedArray(pixels);
   if (srgb) {
     for (let i = 0; i < data.length; i += 4) {
@@ -86,12 +98,17 @@ function pixelsToTexture(pixels, size, dilatePasses, srgb, flip) {
   }
   if (flip) flipRows(data, size, size);
   dilate(data, size, size, dilatePasses);
+  return data;
+}
+
+export function textureFromProcessedPixels(data, size, srgb) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   canvas.getContext('2d').putImageData(new ImageData(data, size, size), 0, 0);
   const tex = new CanvasTexture(canvas);
   tex.colorSpace = srgb ? SRGBColorSpace : NoColorSpace;
   tex.anisotropy = 8;
+  tex.needsUpdate = true;
   return tex;
 }
 
@@ -127,7 +144,7 @@ function makeCardMaterial(maps) {
   return mat;
 }
 
-async function bakeGroupToTextures(renderer, sourceRoot, views, opts = {}) {
+export async function bakeGroupToTextures(renderer, sourceRoot, views, opts = {}) {
   const size = opts.size ?? 512;
   const flip = await probeReadbackRowOrder(renderer);
   const scene = new Scene();
@@ -163,7 +180,9 @@ async function bakeGroupToTextures(renderer, sourceRoot, views, opts = {}) {
         renderer.setRenderTarget(rt);
         await renderer.renderAsync(scene, view.camera);
         const pixels = await renderer.readRenderTargetPixelsAsync(rt, 0, 0, size, size);
-        channels[ch] = pixelsToTexture(pixels, size, opts.dilate ?? 8, ch === 'albedo', flip);
+        channels[ch] = opts.rawPixels
+          ? { data: processPixels(pixels, size, opts.dilate ?? 8, ch === 'albedo', flip), size, srgb: ch === 'albedo' }
+          : pixelsToTexture(pixels, size, opts.dilate ?? 8, ch === 'albedo', flip);
         opts.onProgress?.();
         if (opts.yield) await opts.yield();
       }
@@ -218,8 +237,9 @@ export async function bakeRockImpostor(renderer, sourceMesh, opts = {}) {
   });
 
   const group = new Group();
-  group.name = `${opts.name ?? 'rock'}_billboard`;
+  group.name = `${opts.name ?? 'rock'}_LOD3`;
   group.userData.isBillboard = true;
+  group.userData.lodLevel = 3;
   const cardGeo = new PlaneGeometry(halfW * 2, halfH * 2);
 
   for (const [idx, key] of [[0, 'front'], [1, 'side']]) {
@@ -234,6 +254,40 @@ export async function bakeRockImpostor(renderer, sourceMesh, opts = {}) {
   }
 
   clone.geometry?.dispose?.();
+  return group;
+}
+
+/** Assemble billboard from worker raw pixel payload. */
+export function assembleBillboardFromRawBake(res, opts = {}) {
+  const center = new Vector3(res.center[0], res.center[1], res.center[2]);
+  const { halfW, halfH } = res;
+  const viewTex = {};
+
+  for (const v of ['front', 'side']) {
+    viewTex[v] = {};
+    for (const ch of ['albedo', 'normal', 'rough']) {
+      const { data, size, srgb } = res.baked[v][ch];
+      viewTex[v][ch] = textureFromProcessedPixels(new Uint8ClampedArray(data), size, srgb);
+    }
+  }
+
+  const group = new Group();
+  group.name = `${opts.name ?? res.name ?? 'rock'}_LOD3`;
+  group.userData.isBillboard = true;
+  group.userData.lodLevel = 3;
+  const cardGeo = new PlaneGeometry(halfW * 2, halfH * 2);
+
+  for (const [idx, key] of [[0, 'front'], [1, 'side']]) {
+    const card = new Mesh(cardGeo, makeCardMaterial(viewTex[key]));
+    card.name = `billboard_${key}`;
+    card.position.copy(center);
+    if (idx === 1) card.rotation.y = -Math.PI / 2;
+    card.castShadow = true;
+    card.receiveShadow = false;
+    card.userData.isBillboardCard = true;
+    group.add(card);
+  }
+
   return group;
 }
 

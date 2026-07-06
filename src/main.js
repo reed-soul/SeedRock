@@ -6,6 +6,7 @@ import { SPECIES, DEFAULT_SPECIES } from './species/index.js';
 import { buildGUI, applyOverrides, createDefaultState } from './ui/controls.js';
 import { buildLivingScene, buildHeroRock, disposeLivingScene, disposeHeroRock } from './generator/scene-build.js';
 import { generateRockGeometry } from './generator/mesh.js';
+import { BakeService } from './core/bake-service.js';
 import { Mesh } from 'three/webgpu';
 
 const hud = document.getElementById('hud');
@@ -48,6 +49,8 @@ async function main() {
   const state = createDefaultState();
   const texLoader = new THREE.TextureLoader();
   const textureCache = new Map();
+  const bakeService = new BakeService();
+  await bakeService.init();
 
   const content = new THREE.Group();
   content.name = 'content';
@@ -59,6 +62,9 @@ async function main() {
   let currentMaterial = null;
   let currentRoot = null;
   let rebuildGen = 0;
+  let mapsForBake = null;
+
+  const perf = { frames: 0, acc: 0, fps: 0, ms: 0 };
 
   async function loadTextures(preset) {
     const key = preset.id;
@@ -95,13 +101,19 @@ async function main() {
     const maps = await loadTextures(preset);
     if (gen !== rebuildGen) return;
 
+    mapsForBake = maps;
     currentMaterial = makeRockMaterial(preset, maps, state.overlay);
 
     const lodOpts = {
       bakeBillboard: state.useLOD && state.bakeBillboard,
       renderer,
+      quality: state.quality,
+      bakeService,
+      maps,
       bakeOpts: {
         yield: nextPaint,
+        bakeService,
+        maps,
         onProgress: () => setLoading(true, 'Baking impostor…', 0.7),
       },
     };
@@ -131,19 +143,7 @@ async function main() {
 
     content.add(currentRoot);
     controls.update();
-
-    if (hud) {
-      hud.textContent = [
-        'SeedRock',
-        `backend: ${sceneCtx.backend}`,
-        `species: ${preset.name}`,
-        `seed: ${state.seed}`,
-        `mode: ${state.sceneMode}`,
-        `lod: ${state.useLOD ? (state.bakeBillboard ? 'mesh+billboard' : 'mesh') : 'off'}`,
-        `verts: ${countVertices(currentRoot)}`,
-      ].join('\n');
-    }
-
+    updateHud(preset);
     setLoading(false);
   }
 
@@ -158,6 +158,24 @@ async function main() {
     return n;
   }
 
+  function updateHud(preset) {
+    if (!hud) return;
+    const lines = [
+      'SeedRock',
+      `backend: ${sceneCtx.backend}`,
+      `bake: ${bakeService.available ? 'worker' : 'main'}`,
+      `species: ${preset.name}`,
+      `seed: ${state.seed}`,
+      `mode: ${state.sceneMode}`,
+      `lod: ${state.useLOD ? (state.bakeBillboard ? 'mesh+billboard' : 'mesh') : 'off'}`,
+      `verts: ${countVertices(currentRoot)}`,
+    ];
+    if (state.perfHud) {
+      lines.push(`fps: ${perf.fps}`, `frame: ${perf.ms}ms`);
+    }
+    hud.textContent = lines.join('\n');
+  }
+
   await rebuildRock();
 
   buildGUI({
@@ -167,7 +185,24 @@ async function main() {
     onExport: () => downloadGLB(content, `seedrock_${state.speciesKey}_${state.seed}.glb`),
   });
 
-  renderer.setAnimationLoop(() => {
+  let lastHud = 0;
+  renderer.setAnimationLoop((time) => {
+    const dt = perf.last ? time - perf.last : 16;
+    perf.last = time;
+    perf.acc += dt;
+    perf.frames++;
+    if (perf.acc >= 500) {
+      perf.fps = Math.round((perf.frames * 1000) / perf.acc);
+      perf.ms = Math.round(perf.acc / perf.frames);
+      perf.frames = 0;
+      perf.acc = 0;
+      if (state.perfHud && time - lastHud > 400) {
+        lastHud = time;
+        const preset = SPECIES[state.speciesKey] ?? SPECIES[DEFAULT_SPECIES];
+        updateHud(applyOverrides(preset, state));
+      }
+    }
+
     controls.autoRotate = state.autoRotate;
     controls.autoRotateSpeed = state.autoRotateSpeed;
     controls.update();
