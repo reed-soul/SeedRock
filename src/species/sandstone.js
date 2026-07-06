@@ -9,9 +9,10 @@ export const sandstone = {
   roughness: 0.96,
   metalness: 0,
   textures: {
-    albedo: null,
-    normal: null,
-    roughness: null,
+    albedo: 'sandstone_albedo.png',
+    normal: 'sandstone_normal.png',
+    roughness: 'sandstone_roughness.png',
+    triplanarScale: 0.48,
   },
   shape: {
     radius: 1,

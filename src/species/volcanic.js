@@ -1,0 +1,44 @@
+// Volcanic tuff — porous, vesicular, rough pumice-like cavities.
+
+export const volcanic = {
+  id: 'volcanic',
+  name: 'Volcanic Tuff',
+  latin: 'Tuffa',
+  biome: 'volcanic',
+  color: 0x6b4a42,
+  roughness: 0.98,
+  metalness: 0,
+  textures: {
+    albedo: 'volcanic_albedo.png',
+    normal: 'volcanic_normal.png',
+    roughness: 'volcanic_roughness.png',
+    triplanarScale: 0.42,
+  },
+  shape: {
+    radius: 1,
+    detail: 4,
+    squash: 0.9,
+    stretch: [1.0, 0.95, 1.0],
+    offset: [0, 0.1, 0],
+  },
+  noise: {
+    scale: 3.0,
+    offset: [2.2, 0.9, 1.5],
+    octaves: 6,
+    lacunarity: 2.4,
+    gain: 0.55,
+    amplitude: 0.32,
+    microAmplitude: 0.05,
+    ridged: false,
+  },
+  erosion: {
+    thermal: { enabled: true, iterations: 9, talus: 0.04, rate: 0.28 },
+    hydraulic: { enabled: true, droplets: 70, steps: 20, erosion: 0.18, deposit: 0.09 },
+    edgeWear: { enabled: true, strength: 0.08 },
+  },
+  lod: {
+    full: { detail: 4 },
+    reduced: { detail: 2 },
+    impostor: { detail: 1 },
+  },
+};

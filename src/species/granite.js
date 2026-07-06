@@ -11,9 +11,10 @@ export const granite = {
   roughness: 0.92,
   metalness: 0.02,
   textures: {
-    albedo: null,
-    normal: null,
-    roughness: null,
+    albedo: 'granite_albedo.png',
+    normal: 'granite_normal.png',
+    roughness: 'granite_roughness.png',
+    triplanarScale: 0.45,
   },
   shape: {
     radius: 1,
