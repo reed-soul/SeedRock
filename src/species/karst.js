@@ -16,7 +16,7 @@ export const karst = {
   },
   shape: {
     radius: 1,
-    detail: 4,
+    detail: 5,
     squash: 0.92,
     stretch: [0.95, 1.1, 1.0],
     offset: [0, 0.18, 0],
@@ -37,8 +37,8 @@ export const karst = {
     edgeWear: { enabled: true, strength: 0.09 },
   },
   lod: {
-    full: { detail: 4 },
-    reduced: { detail: 2 },
+    full: { detail: 5 },
+    reduced: { detail: 3 },
     impostor: { detail: 1 },
   },
 };

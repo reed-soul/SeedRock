@@ -2,7 +2,7 @@
 // Ingest AI-generated PBR textures into public/assets/textures/.
 //
 // Usage:
-//   npm run textures:ingest -- --species granite --dir ./ai-output/
+//   pnpm textures:ingest -- --species granite --dir ./ai-output/
 //
 // Expected filenames (any of these patterns):
 //   granite_albedo.png | granite_albedo.jpg
@@ -46,7 +46,7 @@ async function findFile(dir, prefix, suffix) {
 
 const { species, dir } = parseArgs(process.argv);
 if (!species || !dir) {
-  console.error('Usage: npm run textures:ingest -- --species <id> --dir <folder>');
+  console.error('Usage: pnpm textures:ingest -- --species <id> --dir <folder>');
   process.exit(1);
 }
 

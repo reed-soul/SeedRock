@@ -20,6 +20,6 @@ export const SPECIES = {
   schist,
 };
 
-export const DEFAULT_SPECIES = 'granite';
+export const DEFAULT_SPECIES = 'karst';
 
 export const SPECIES_LIST = Object.values(SPECIES);

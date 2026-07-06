@@ -6,3 +6,7 @@ tmp/
 .codex-tmp/
 work_tmp/
 output/
+
+# Texture pipeline intermediates — generated, not source
+ai-output/
+public/assets/textures/_procedural_backup/
