@@ -6,8 +6,10 @@ import { downloadGLB } from './export/glb.js';
 import { SPECIES, DEFAULT_SPECIES } from './species/index.js';
 import { buildGUI, applyOverrides, createDefaultState } from './ui/controls.js';
 import { applyUrlState } from './ui/url-state.js';
+import { applyCameraPreset } from './ui/showcase.js';
 import { buildLivingScene, buildHeroRock, disposeLivingScene, disposeHeroRock } from './generator/scene-build.js';
 import { generateRockGeometry } from './generator/mesh.js';
+import { PaintBrush } from './generator/paint.js';
 import { BakeService } from './core/bake-service.js';
 import { Mesh } from 'three/webgpu';
 
@@ -47,7 +49,7 @@ async function main() {
     return fail(`Renderer init failed:\n${e.message}\n\nTry Chrome 113+ or Edge.`);
   }
 
-  const { scene, camera, renderer, controls } = sceneCtx;
+  const { scene, camera, renderer, controls, grid } = sceneCtx;
   const state = createDefaultState();
   applyUrlState(state);
   const texLoader = new THREE.TextureLoader();
@@ -60,13 +62,46 @@ async function main() {
   content.name = 'content';
   scene.add(content);
 
-  const grid = scene.children.find((c) => c.isGridHelper);
-  state.onShowGrid = (v) => { if (grid) grid.visible = v; };
+  // paintGroup is a sibling of currentRoot under content — disposeContent()
+  // only removes currentRoot, so painted rocks survive rebuildRock() calls
+  // (species/shape/erosion changes) and are included in GLB export.
+  const paintGroup = new THREE.Group();
+  paintGroup.name = 'paint_group';
+  content.add(paintGroup);
+
+  const gridHelper = grid;
+  state.onShowGrid = (v) => { if (gridHelper) gridHelper.visible = v; };
+  state.onShowGrid(state.showGrid);
 
   let currentMaterial = null;
   let currentRoot = null;
   let rebuildGen = 0;
   let mapsForBake = null;
+
+  // Paint brush — built once, enabled/disabled on scene-mode switch. Sources
+  // its preset/material lazily via closures so it always sees the live state.
+  const brush = new PaintBrush({
+    scene, camera, renderer,
+    getPreset: () => applyOverrides(SPECIES[state.speciesKey] ?? SPECIES[DEFAULT_SPECIES], state),
+    getMaterial: () => currentMaterial,
+    getTerrain: () => scene.getObjectByName('terrain'),
+  });
+  brush.group.position.copy(paintGroup.position);
+  paintGroup.add(brush.group);
+  brush.setParams(state.paint);
+
+  state.onPaintParams = () => brush.setParams(state.paint);
+  state.onPaintClear = () => brush.clear();
+  state.onPaintEnter = () => {
+    brush.setSpecies();          // rebuild mesh for the current species/material
+    brush.setParams(state.paint);
+    brush.enable();
+    controls.enabled = false;    // left-drag = paint, not orbit
+  };
+  state.onPaintExit = () => {
+    brush.disable();
+    controls.enabled = true;
+  };
 
   const perf = { frames: 0, acc: 0, fps: 0, ms: 0 };
 
@@ -129,12 +164,20 @@ async function main() {
         ...lodOpts,
       });
       if (gen !== rebuildGen) return;
-      controls.target.set(0, 1.4, 0);
-      camera.position.set(5, 3.2, 7);
+    } else if (state.sceneMode === 'paint') {
+      // Paint mode: a lightweight hero rock for preview (no LOD/bake). The brush
+      // mesh is rebuilt too — species/shape/erosion changes swap what gets painted.
+      const geometry = generateRockGeometry(preset, state.seed);
+      const mesh = new Mesh(geometry, currentMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.position.y = -geometry.boundingBox.min.y;
+      mesh.name = `${preset.id}_${state.seed}_paint_preview`;
+      currentRoot = mesh;
+      brush.setSpecies();
     } else if (state.useLOD) {
       currentRoot = await buildHeroRock(preset, state.seed, currentMaterial, lodOpts);
       if (gen !== rebuildGen) return;
-      controls.target.set(0, 1.1, 0);
     } else {
       const geometry = generateRockGeometry(preset, state.seed);
       const mesh = new Mesh(geometry, currentMaterial);
@@ -146,7 +189,10 @@ async function main() {
     }
 
     content.add(currentRoot);
-    controls.update();
+    applyCameraPreset(camera, controls, state.sceneMode);
+    // Re-seal brush state after a rebuild: if we're in paint mode, re-enable
+    // (disposeContent path may have swapped the material the brush captured).
+    if (state.sceneMode === 'paint' && !brush.enabled) state.onPaintEnter?.();
     updateHud(preset);
     setLoading(false);
   }
@@ -173,6 +219,7 @@ async function main() {
       `mode: ${state.sceneMode}`,
       `lod: ${state.useLOD ? (state.bakeBillboard ? 'mesh+billboard' : 'mesh') : 'off'}`,
       `verts: ${countVertices(currentRoot)}`,
+      `painted: ${brush.count}`,
     ];
     if (state.perfHud) {
       lines.push(`fps: ${perf.fps}`, `frame: ${perf.ms}ms`);

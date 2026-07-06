@@ -1,5 +1,6 @@
 import GUI from 'lil-gui';
 import { SPECIES, DEFAULT_SPECIES } from '../species/index.js';
+import { createShowcaseState } from './showcase.js';
 
 /**
  * @param {object} ctx
@@ -18,6 +19,7 @@ export function buildGUI(ctx) {
     erosion: gui.addFolder('Erosion'),
     overlay: gui.addFolder('Cover'),
     scene: gui.addFolder('Scene'),
+    paint: gui.addFolder('Paint'),
     export: gui.addFolder('Export'),
   };
 
@@ -51,7 +53,16 @@ export function buildGUI(ctx) {
   folders.overlay.add(state.overlay, 'snow', 0, 1, 0.01).name('Snow').onChange(() => ctx.onRegenerate('overlay'));
   folders.overlay.add(state.overlay, 'useSnowTexture').name('Snow Texture').onChange(() => ctx.onRegenerate('overlay'));
 
-  folders.scene.add(state, 'sceneMode', { Single: 'single', Living: 'living' }).name('Mode').onChange(() => ctx.onRegenerate('scene'));
+  folders.scene.add(state, 'sceneMode', { Single: 'single', Living: 'living', Paint: 'paint' }).name('Mode').onChange((mode) => {
+    // Entering/exiting paint toggles orbit + the brush; rebuild routes the
+    // camera preset via applyCameraPreset in main.js.
+    if (mode === 'paint') {
+      state.onPaintEnter?.();
+    } else {
+      state.onPaintExit?.();
+    }
+    ctx.onRegenerate('scene');
+  });
   folders.scene.add(state.scene, 'scatterCount', 0, 30, 1).name('Scatter').onFinishChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'useLOD').name('LOD').onChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'bakeBillboard').name('Billboard Bake').onChange(() => ctx.onRegenerate('scene'));
@@ -60,6 +71,14 @@ export function buildGUI(ctx) {
   folders.scene.add(state, 'quality', { High: 'high', Medium: 'medium', Low: 'low' }).name('Quality').onChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'perfHud').name('Perf HUD');
   folders.scene.add(state, 'showGrid').name('Grid').onChange((v) => { state.onShowGrid?.(v); });
+
+  // Paint brush — only meaningful in Paint mode, but the controls are live in
+  // any mode so the user can dial in spacing/scale before entering paint.
+  folders.paint.add(state.paint, 'spacing', 0.1, 1.2, 0.05).name('Brush Spacing').onChange(() => state.onPaintParams?.());
+  folders.paint.add(state.paint, 'scaleMin', 0.05, 0.6, 0.01).name('Min Scale').onChange(() => state.onPaintParams?.());
+  folders.paint.add(state.paint, 'scaleMax', 0.1, 1.5, 0.01).name('Max Scale').onChange(() => state.onPaintParams?.());
+  folders.paint.add(state.paint, 'randomRot').name('Random Rotation').onChange(() => state.onPaintParams?.());
+  folders.paint.add({ clear: () => state.onPaintClear?.() }, 'clear').name('Clear Painted');
 
   folders.export.add({ exportGlb: async () => {
     const bytes = await ctx.onExport();
@@ -109,20 +128,5 @@ export function applyOverrides(preset, state) {
 }
 
 export function createDefaultState() {
-  return {
-    speciesKey: DEFAULT_SPECIES,
-    seed: 42,
-    shape: { radius: 1, detail: 4, squash: 0.88, amplitude: 0.28 },
-    erosion: { thermal: true, hydraulic: true, edgeWear: true },
-    overlay: { moss: 0, snow: 0, useMossTexture: true, useSnowTexture: true },
-    sceneMode: 'single',
-    scene: { scatterCount: 14 },
-    useLOD: true,
-    bakeBillboard: true,
-    autoRotate: true,
-    autoRotateSpeed: 0.6,
-    showGrid: true,
-    quality: 'high',
-    perfHud: false,
-  };
+  return createShowcaseState();
 }
