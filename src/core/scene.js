@@ -3,6 +3,26 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /**
  * @param {HTMLElement} container
+ * @param {{ forceWebGL?: boolean }} [opts]
+ */
+async function initRenderer(container, opts = {}) {
+  const renderer = new THREE.WebGPURenderer({
+    antialias: true,
+    forceWebGL: opts.forceWebGL ?? false,
+  });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  container.appendChild(renderer.domElement);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  await renderer.init();
+  return renderer;
+}
+
+/**
+ * @param {HTMLElement} container
  * @returns {Promise<{ scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGPURenderer, controls: OrbitControls, backend: string }>}
  */
 export async function createScene(container) {
@@ -13,17 +33,20 @@ export async function createScene(container) {
   const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.05, 200);
   camera.position.set(4.2, 2.8, 5.5);
 
-  const renderer = new THREE.WebGPURenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(innerWidth, innerHeight);
-  container.appendChild(renderer.domElement);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
-  await renderer.init();
-
-  const backend = renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL2 (fallback)';
+  let renderer;
+  let backend;
+  try {
+    renderer = await initRenderer(container, { forceWebGL: false });
+    backend = renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL2';
+  } catch (webgpuErr) {
+    console.warn('[SeedRock] WebGPU init failed, falling back to WebGL2:', webgpuErr);
+    try {
+      renderer = await initRenderer(container, { forceWebGL: true });
+      backend = 'WebGL2 (fallback)';
+    } catch (webglErr) {
+      throw new Error(`WebGPU: ${webgpuErr.message}\nWebGL2: ${webglErr.message}`);
+    }
+  }
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;

@@ -17,6 +17,8 @@ const SPECIES = {
   basalt: { rgb: [58, 58, 66], var: 18, grain: 0.16, pore: 0.03, roughBase: 0.85 },
   limestone: { rgb: [216, 210, 196], var: 16, grain: 0.08, pore: 0.05, roughBase: 0.92 },
   volcanic: { rgb: [107, 74, 66], var: 30, grain: 0.2, pore: 0.12, roughBase: 0.97 },
+  river_cobble: { rgb: [122, 117, 110], var: 20, grain: 0.09, pore: 0.03, roughBase: 0.78 },
+  karst: { rgb: [200, 192, 176], var: 24, grain: 0.18, pore: 0.14, roughBase: 0.88 },
 };
 
 function hash(x, y, seed) {
