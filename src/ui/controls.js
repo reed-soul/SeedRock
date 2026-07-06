@@ -52,6 +52,7 @@ export function buildGUI(ctx) {
   folders.scene.add(state, 'sceneMode', { Single: 'single', Living: 'living' }).name('Mode').onChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state.scene, 'scatterCount', 0, 30, 1).name('Scatter').onFinishChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'useLOD').name('LOD').onChange(() => ctx.onRegenerate('scene'));
+  folders.scene.add(state, 'bakeBillboard').name('Billboard Bake').onChange(() => ctx.onRegenerate('scene'));
   folders.scene.add(state, 'autoRotate').name('Auto Rotate');
   folders.scene.add(state, 'autoRotateSpeed', 0.1, 3, 0.1).name('Rotate Speed');
   folders.scene.add(state, 'showGrid').name('Grid').onChange((v) => { state.onShowGrid?.(v); });
@@ -113,6 +114,7 @@ export function createDefaultState() {
     sceneMode: 'single',
     scene: { scatterCount: 14 },
     useLOD: true,
+    bakeBillboard: true,
     autoRotate: true,
     autoRotateSpeed: 0.6,
     showGrid: true,
