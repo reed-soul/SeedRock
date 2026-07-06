@@ -26,7 +26,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
-      - run: pnpm textures
       - run: pnpm build
         env:
           BASE_PATH: /SeedRock/
