@@ -78,3 +78,40 @@ test('edgeWear: pushes high-curvature vertices inward more than low-curvature', 
   const wear3 = peak3Before - peak3After;
   assert.ok(wear0 >= wear3, `sharper peak should wear more (got ${wear0} vs ${wear3})`);
 });
+
+test('thermalErode (3D): transports material along a lateral slope, not just Y', () => {
+  // Two vertices at the SAME height (y=1) but offset in X — a lateral slope like
+  // the underside of an overhang. The legacy Y-only thermalErode would do
+  // nothing here (yDiff = 0). The 3D version transports material along the
+  // i→j direction, so vertex 0 should move toward vertex 1 in X.
+  //
+  //   vertex 0 at (0, 1, 0), vertex 1 at (1, 1, 0) — same Y, lateral offset.
+  //   To create a Y gradient that drives flow, vertex 1 sits at y=0.7 (slightly
+  //   lower). Flow should be along (1,1,0)-(0,1,0) = +X direction (downhill),
+  //   so vertex 0's X increases — proving lateral (non-Y) transport.
+  const positions = new Float32Array([
+    0.0, 1.0, 0.0,  // 0: higher
+    1.0, 0.7, 0.0,  // 1: lower, offset in +X
+  ]);
+  const neighbors = [[1], [0]];
+  thermalErode(positions, neighbors, 2, { iterations: 1, talus: 0.1, rate: 1.0 });
+  // Vertex 0 should have moved in +X (toward vertex 1) — lateral transport.
+  assert.ok(positions[0] > 0.0, `vertex 0 X should increase laterally (got ${positions[0]})`);
+});
+
+test('thermalErode: mass conserved on a 3D slope (centroid stable)', () => {
+  // Symmetric transport conserves the centroid (sum of positions) — true on a
+  // 3D slope, not just a height-field.
+  const positions = new Float32Array([
+    0, 1.0, 0,  // 0
+    1, 0.5, 0,  // 1 (lower, +X offset)
+  ]);
+  const neighbors = [[1], [0]];
+  const cxBefore = positions[0] + positions[3];
+  const cyBefore = positions[1] + positions[4];
+  thermalErode(positions, neighbors, 2, { iterations: 3, talus: 0.1, rate: 0.8 });
+  const cxAfter = positions[0] + positions[3];
+  const cyAfter = positions[1] + positions[4];
+  assert.ok(Math.abs(cxAfter - cxBefore) < 1e-4, 'X centroid conserved');
+  assert.ok(Math.abs(cyAfter - cyBefore) < 1e-4, 'Y centroid conserved');
+});
