@@ -50,6 +50,18 @@ async function main() {
   }
 
   const { scene, camera, renderer, controls, grid } = sceneCtx;
+
+  // Toon outline: a PostProcessing chain that adds a BackSide-normal-extruded
+  // ink outline. Only active when style === 'toon' (PBR/lowpoly render direct).
+  // Built once; render loop branches on state.style.
+  let toonPost = null;
+  function ensureToonPost() {
+    if (toonPost) return toonPost;
+    toonPost = new THREE.PostProcessing();
+    toonPost.outputNode = THREE.toonOutlinePass(scene, camera, new THREE.Color(0, 0, 0), 0.004, 1.0);
+    return toonPost;
+  }
+
   const state = createDefaultState();
   applyUrlState(state);
   const texLoader = new THREE.TextureLoader();
@@ -261,7 +273,12 @@ async function main() {
     controls.update();
     const lod = currentRoot?.userData?.hero ?? (currentRoot?.isLOD ? currentRoot : null);
     if (lod?.isLOD) lod.update(camera);
-    renderer.render(scene, camera);
+    if (state.style === 'toon') {
+      ensureToonPost();
+      toonPost.renderAsync();
+    } else {
+      renderer.render(scene, camera);
+    }
   });
 }
 
