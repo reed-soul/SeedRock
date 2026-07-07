@@ -91,9 +91,12 @@ export class BakeService {
   }
 
   dispose() {
+    for (const [, pending] of this._pending) {
+      pending.reject(new Error('BakeService disposed'));
+    }
+    this._pending.clear();
     this._worker?.terminate();
     this._worker = null;
     this._ready = false;
-    this._pending.clear();
   }
 }

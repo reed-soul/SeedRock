@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shouldDrop, nextSlot, MAX_PAINT } from '../src/generator/paint.js';
+import { shouldDrop, nextSlot, pickVariantIndex, MAX_PAINT } from '../src/generator/paint.js';
+import { Rng } from '../src/core/rng.js';
 
 test('shouldDrop: first drop always allowed (no previous point)', () => {
   assert.equal(shouldDrop(null, { x: 0, y: 0, z: 0 }, 0.3), true);
@@ -37,6 +38,14 @@ test('nextSlot: wraps around once MAX_PAINT is reached (ring buffer)', () => {
   assert.equal(nextSlot(0, MAX_PAINT), 1);
   assert.equal(nextSlot(MAX_PAINT - 1, MAX_PAINT), 0);
   assert.equal(nextSlot(500, MAX_PAINT), 501);
+});
+
+test('pickVariantIndex: returns in-range variant for rng', () => {
+  const rng = new Rng('paint-variant-test');
+  for (let i = 0; i < 20; i++) {
+    const vi = pickVariantIndex(rng, 3);
+    assert.ok(vi >= 0 && vi < 3, `variant ${vi} out of range`);
+  }
 });
 
 test('nextSlot: wrap is stable across many overwrites', () => {

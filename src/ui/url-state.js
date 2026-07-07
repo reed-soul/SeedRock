@@ -12,13 +12,30 @@ function clamp01(v) {
   return Math.max(0, Math.min(1, v));
 }
 
+/** @param {string} key */
+function snakeToCamel(key) {
+  return key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+/**
+ * Resolve a species query value to a registry key (camelCase aliases, snake_case URLs).
+ * @param {string} key
+ * @returns {string|null}
+ */
+export function resolveSpeciesKey(key) {
+  if (SPECIES[key]) return key;
+  const camel = snakeToCamel(key);
+  if (SPECIES[camel]) return camel;
+  return null;
+}
+
 /**
  * Apply URL query overrides onto viewer state (non-destructive merge).
  *
  * Recognized query params (all optional):
  *   species=<key>          — registry key (e.g. granite)
  *   seed=<int>
- *   scene=single|living
+ *   scene=single|living|paint
  *   style=pbr|lowpoly|toon
  *   moss=<0..1>, snow=<0..1>
  *   scatter=<int>
@@ -32,7 +49,8 @@ function clamp01(v) {
  */
 export function applyUrlState(state, params = new URLSearchParams(location.search)) {
   const species = params.get('species');
-  if (species && SPECIES[species]) state.speciesKey = species;
+  const resolved = species ? resolveSpeciesKey(species) : null;
+  if (resolved) state.speciesKey = resolved;
 
   const seed = params.get('seed');
   if (seed != null) {
@@ -41,7 +59,7 @@ export function applyUrlState(state, params = new URLSearchParams(location.searc
   }
 
   const scene = params.get('scene');
-  if (scene === 'single' || scene === 'living') state.sceneMode = scene;
+  if (scene === 'single' || scene === 'living' || scene === 'paint') state.sceneMode = scene;
 
   if (params.has('moss')) state.overlay.moss = clamp01(num(params.get('moss'), 0));
   if (params.has('snow')) state.overlay.snow = clamp01(num(params.get('snow'), 0));
@@ -64,7 +82,7 @@ export function applyUrlState(state, params = new URLSearchParams(location.searc
       if (raw == null) continue;
       const v = num(raw, undefined);
       if (v === undefined) continue;
-      state.params[d.key] = v;
+      state.params[d.key] = Math.max(d.min, Math.min(d.max, v));
     }
     // Drop any stale param keys not declared on the current species (defensive).
     for (const k of Object.keys(state.params)) {

@@ -17,11 +17,16 @@ function accentFor(example) {
   return BIOME_ACCENT[biome] ?? '#8a919c';
 }
 
-function tagHtml(tags = []) {
-  return tags.map((t) => `<span class="tag">${t}</span>`).join('');
+function appendTags(parent, tags = []) {
+  for (const t of tags) {
+    const span = document.createElement('span');
+    span.className = 'tag';
+    span.textContent = t;
+    parent.appendChild(span);
+  }
 }
 
-function cardHtml(example) {
+function createCard(example) {
   const href = buildViewerUrl(example, base);
   const species = SPECIES[example.speciesKey];
   const accent = accentFor(example);
@@ -33,20 +38,48 @@ function cardHtml(example) {
     example.overlay?.moss ? `moss ${Math.round(example.overlay.moss * 100)}%` : null,
   ].filter(Boolean).join(' · ');
 
-  return `
-    <a class="card" href="${href}" style="--accent:${accent}">
-      <div class="swatch" aria-hidden="true"></div>
-      <div class="body">
-        <h2>${example.title}</h2>
-        <p class="meta">${meta}</p>
-        <p class="desc">${example.description}</p>
-        <div class="tags">${tagHtml(example.tags)}</div>
-      </div>
-      <span class="cta">Open in viewer →</span>
-    </a>
-  `;
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = href;
+  a.style.setProperty('--accent', accent);
+
+  const swatch = document.createElement('div');
+  swatch.className = 'swatch';
+  swatch.setAttribute('aria-hidden', 'true');
+  a.appendChild(swatch);
+
+  const body = document.createElement('div');
+  body.className = 'body';
+
+  const title = document.createElement('h2');
+  title.textContent = example.title;
+  body.appendChild(title);
+
+  const metaEl = document.createElement('p');
+  metaEl.className = 'meta';
+  metaEl.textContent = meta;
+  body.appendChild(metaEl);
+
+  const desc = document.createElement('p');
+  desc.className = 'desc';
+  desc.textContent = example.description;
+  body.appendChild(desc);
+
+  const tags = document.createElement('div');
+  tags.className = 'tags';
+  appendTags(tags, example.tags);
+  body.appendChild(tags);
+
+  a.appendChild(body);
+
+  const cta = document.createElement('span');
+  cta.className = 'cta';
+  cta.textContent = 'Open in viewer →';
+  a.appendChild(cta);
+
+  return a;
 }
 
 if (grid) {
-  grid.innerHTML = EXAMPLES.map(cardHtml).join('');
+  grid.replaceChildren(...EXAMPLES.map(createCard));
 }

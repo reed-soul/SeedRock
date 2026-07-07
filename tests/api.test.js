@@ -100,16 +100,23 @@ describe('generate (headless, no GPU)', () => {
 
 describe('skeleton (cheap, no erosion)', () => {
   it('runs faster than full generate on a high-erosion species', () => {
-    const tGenStart = performance.now();
-    generate({ species: 'riverCobble', seed: 5 }); // strongest hydraulic erosion
-    const tGen = performance.now() - tGenStart;
+    const time = (fn) => {
+      const t0 = performance.now();
+      fn();
+      return performance.now() - t0;
+    };
+    const median = (fn, runs = 7) => {
+      for (let i = 0; i < 2; i++) fn(); // warmup JIT + caches
+      const samples = Array.from({ length: runs }, () => time(fn));
+      samples.sort((a, b) => a - b);
+      return samples[Math.floor(samples.length / 2)];
+    };
 
-    const tSkelStart = performance.now();
-    skeleton({ species: 'riverCobble', seed: 5 });
-    const tSkel = performance.now() - tSkelStart;
+    const tGen = median(() => generate({ species: 'riverCobble', seed: 5 }));
+    const tSkel = median(() => skeleton({ species: 'riverCobble', seed: 5 }));
 
     // skeleton skips erosion, so it should be at least as fast — usually much
-    // faster. Assert not-slower to stay robust on a loaded CI box.
+    // faster. Median + warmup keeps this robust on a loaded CI box.
     assert.ok(tSkel <= tGen * 1.5, `skeleton (${tSkel.toFixed(1)}ms) not slower than generate (${tGen.toFixed(1)}ms)`);
   });
 
