@@ -1,24 +1,21 @@
-import { Vector3 } from 'three/webgpu';
 import { makeNoise3D } from '../core/noise.js';
 import { Rng } from '../core/rng.js';
 import { applyErosion } from './erosion.js';
-import { buildBoulder, displaceRadial } from './forms/boulder.js';
-import { buildColumnar } from './forms/columnar.js';
-import { buildSlate } from './forms/slate.js';
-import { buildCrystal } from './forms/crystal.js';
+import { buildStructureGraph, meshStructureGraph } from './structure/graph.js';
 
 /**
  * @typedef {import('../species/granite.js').RockPreset} RockPreset
  */
 
-// Structural forms (columnar/slate/crystal) get their character from the
-// base geometry itself, so the primary radial displacer would only smear
-// their silhouette. Boulder is the only form that uses radial displacement
-// as its primary shape driver.
-const STRUCTURAL_FORMS = new Set(['columnar', 'slate', 'crystal']);
-
 /**
  * Generate a procedural rock mesh from a species preset and seed.
+ *
+ * Internally routes through the StructureGraph layer (buildStructureGraph →
+ * meshStructureGraph). The graph captures the rock's topology as pure data;
+ * the mesher turns it into geometry. Each form's graph builder uses the same
+ * rng draw order and noise seeding the legacy form factories did, so
+ * (species, seed) output is byte-identical to the pre-refactor implementation.
+ *
  * @param {RockPreset} preset
  * @param {string|number} seed
  * @param {{ style?: 'pbr'|'lowpoly'|'toon' }} [opts]
@@ -26,27 +23,15 @@ const STRUCTURAL_FORMS = new Set(['columnar', 'slate', 'crystal']);
  */
 export function generateRockGeometry(preset, seed, opts = {}) {
   const rng = new Rng(`${preset.id}:${seed}`);
-  const { shape, noise: noiseParams, erosion } = preset;
+  const { erosion } = preset;
   const noise = makeNoise3D(rng.int(1, 1_000_000));
   const isLowpoly = opts.style === 'lowpoly';
-  const form = shape.form ?? 'boulder';
 
-  // Dispatch to the form factory — each returns { geo, origin }.
-  let geo, origin;
-  if (form === 'columnar') {
-    ({ geo, origin } = buildColumnar(shape, noise, rng));
-  } else if (form === 'slate') {
-    ({ geo, origin } = buildSlate(shape, rng));
-  } else if (form === 'crystal') {
-    ({ geo, origin } = buildCrystal(shape, rng));
-  } else {
-    ({ geo, origin } = buildBoulder(shape, noiseParams, noise, rng));
-    // Boulder only: radial displacement IS the primary shape.
-    displaceRadial(
-      geo, origin, noiseParams, noise,
-      shape.stretch ?? [1, 1, 1], shape.squash,
-    );
-  }
+  // Build the structure graph (pure topology) then mesh it. `noise` is consumed
+  // only by the boulder path; structural forms ignore it. The graph builder
+  // draws from `rng` in the same order as the legacy factories.
+  const graph = buildStructureGraph(preset, rng, noise);
+  const geo = meshStructureGraph(graph, { detail: preset.shape.detail, style: opts.style });
 
   geo.computeVertexNormals();
   applyErosion(geo, erosion, rng);
