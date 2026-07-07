@@ -235,7 +235,7 @@ async function main() {
     species: SPECIES,
     state,
     onRegenerate: () => { rebuildRock(); },
-    onExport: () => downloadGLB(content, `seedrock_${state.speciesKey}_${state.seed}.glb`),
+    onExport: () => downloadGLB(content, `seedrock_${state.speciesKey}_${state.seed}.glb`, { collider: state.exportCollider }),
   });
 
   let lastHud = 0;
