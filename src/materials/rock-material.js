@@ -1,6 +1,6 @@
 import {
-  MeshStandardNodeMaterial, MeshToonNodeMaterial, BackSide, Color,
-  RepeatWrapping, SRGBColorSpace, NoColorSpace, DataTexture,
+  MeshStandardNodeMaterial, MeshPhysicalNodeMaterial, MeshToonNodeMaterial,
+  BackSide, Color, RepeatWrapping, SRGBColorSpace, NoColorSpace, DataTexture,
 } from 'three/webgpu';
 import {
   texture, triplanarTexture, float, vec3, vec4, normalView, normalWorld, normalize,
@@ -48,13 +48,26 @@ export function makeRockMaterial(preset, maps = {}, overlay = {}, overlayMaps = 
   // perturbation is ignored, so skip building it (saves work + avoids artifacts).
   // Toon lighting also ignores fine normal detail (it bands by NoL).
   const useNormalDetail = !isLowpoly && !isToon;
+  // Physical material (transmission/ior) only meaningful for PBR — flat/toon
+  // shading don't model light transport, so fall back to standard there.
+  const usePhysical = preset.material === 'physical' && !isLowpoly && !isToon;
 
   const mat = isToon
     ? new MeshToonNodeMaterial({ gradientMap: makeToonRamp() })
-    : new MeshStandardNodeMaterial({
-        roughness: preset.roughness,
-        metalness: preset.metalness,
-      });
+    : usePhysical
+      ? new MeshPhysicalNodeMaterial({
+          roughness: preset.roughness,
+          metalness: preset.metalness ?? 0,
+          transmission: preset.transmission ?? 1,
+          thickness: preset.thickness ?? 0.5,
+          ior: preset.ior ?? 1.31,
+          attenuationDistance: preset.attenuationDistance ?? 5,
+          attenuationColor: new Color(preset.attenuationColor ?? 0xd8eef8),
+        })
+      : new MeshStandardNodeMaterial({
+          roughness: preset.roughness,
+          metalness: preset.metalness,
+        });
   if (isLowpoly) mat.flatShading = true;
   mat.shadowSide = BackSide;
 

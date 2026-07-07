@@ -12,6 +12,7 @@ import { crystal } from './crystal.js';
 import { marble } from './marble.js';
 import { obsidian } from './obsidian.js';
 import { ore } from './ore.js';
+import { ice } from './ice.js';
 
 export const SPECIES = {
   granite,
@@ -28,6 +29,7 @@ export const SPECIES = {
   marble,
   obsidian,
   ore,
+  ice,
 };
 
 export const DEFAULT_SPECIES = 'karst';
