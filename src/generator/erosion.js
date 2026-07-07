@@ -40,7 +40,21 @@ function buildAdjacency(geo) {
 }
 
 /**
- * Thermal erosion: steep vertices shed material to lower neighbors.
+ * Thermal erosion: steep vertices shed material downhill along the true 3D
+ * steepest-descent direction, not just the world-Y axis.
+ *
+ * Each vertex i with a higher Y (gravitational height) than neighbor j by more
+ * than `talus` transfers material SYMMETRICALLY along the i→j direction:
+ *   delta_i += dir * transfer     (i slides toward j — downhill)
+ *   delta_j -= dir * transfer     (j is pushed back toward i — mass conserved)
+ * where dir = (j - i).normalize() and transfer = (yDiff - talus) * rate * 0.5.
+ *
+ * On a height-field mesh (vertices differ only in Y) this degenerates to the
+ * classic Y-only transport: i.y decreases, j.y increases. On a fully 3D rock
+ * with overhangs or horizontal slopes, material now flows along the surface
+ * gradient — fixing the Y-axis-only limitation noted in
+ * docs/generation-design.md §3.1.
+ *
  * @param {Float32Array} positions
  * @param {number[][]} neighbors
  * @param {number} count
@@ -63,11 +77,21 @@ export function thermalErode(positions, neighbors, count, params = {}) {
       for (const j of nbrs) {
         const jx = j * 3;
         _b.set(positions[jx], positions[jx + 1], positions[jx + 2]);
-        const diff = _a.y - _b.y;
-        if (diff <= talus) continue;
-        const transfer = (diff - talus) * rate * 0.5;
-        deltas[ix + 1] -= transfer;
-        deltas[jx + 1] += transfer;
+        const yDiff = _a.y - _b.y;
+        if (yDiff <= talus) continue;
+        // 3D direction from i (high) toward j (low); material flows downhill.
+        _n.copy(_b).sub(_a); // j - i
+        const segLen = _n.length();
+        if (segLen < 1e-9) continue;
+        _n.multiplyScalar(1 / segLen);
+        const transfer = (yDiff - talus) * rate * 0.5;
+        // i slides toward j; j is displaced opposite (mass/centroid conserved).
+        deltas[ix]     += _n.x * transfer;
+        deltas[ix + 1] += _n.y * transfer;
+        deltas[ix + 2] += _n.z * transfer;
+        deltas[jx]     -= _n.x * transfer;
+        deltas[jx + 1] -= _n.y * transfer;
+        deltas[jx + 2] -= _n.z * transfer;
       }
     }
 
