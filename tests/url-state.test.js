@@ -38,4 +38,43 @@ describe('url-state', () => {
     assert.ok(url.includes('seed=42'));
     assert.ok(url.includes('moss=0.6'));
   });
+
+  it('applies per-species param overrides via p.<key>', () => {
+    const state = createDefaultState();
+    // switch to granite first so its controls[] is the active vocabulary
+    applyUrlState(state, new URLSearchParams('species=granite&p.blockiness=0.2'));
+    assert.equal(state.params.blockiness, 0.2);
+  });
+
+  it('ignores p.<key> for keys the species does not declare', () => {
+    const state = createDefaultState();
+    applyUrlState(state, new URLSearchParams('species=granite&p.bogusKnob=9'));
+    assert.ok(!('bogusKnob' in (state.params ?? {})));
+  });
+
+  it('builds a URL with per-species params', () => {
+    const url = buildViewerUrl({
+      speciesKey: 'granite',
+      seed: 1,
+      params: { blockiness: 0.3 },
+    });
+    assert.ok(url.includes('p.blockiness=0.3'), 'param emitted as p.<key>');
+  });
+
+  it('does NOT emit undeclared params in the URL', () => {
+    const url = buildViewerUrl({
+      speciesKey: 'granite',
+      seed: 1,
+      params: { blockiness: 0.3, bogusKnob: 9 },
+    });
+    assert.ok(!url.includes('bogusKnob'));
+  });
+
+  it('legacy URL without p.* still works (back-compat)', () => {
+    const state = createDefaultState();
+    applyUrlState(state, new URLSearchParams('species=granite&seed=5&scene=living'));
+    assert.equal(state.speciesKey, 'granite');
+    assert.equal(state.seed, 5);
+    assert.equal(state.sceneMode, 'living');
+  });
 });

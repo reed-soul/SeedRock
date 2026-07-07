@@ -1,6 +1,8 @@
 import GUI from 'lil-gui';
 import { SPECIES, DEFAULT_SPECIES } from '../species/index.js';
 import { createShowcaseState } from './showcase.js';
+import { controlsFromSpecies, applySpeciesControls } from '../species/controls.js';
+import { toPreset, fromPreset } from '../species/preset.js';
 
 /**
  * @param {object} ctx
@@ -87,6 +89,58 @@ export function buildGUI(ctx) {
     if (bytes) console.log(`[SeedRock] exported ${(bytes / 1024).toFixed(1)} KB`);
   }}, 'exportGlb').name('Download .glb');
 
+  // Save / Load preset — round-trips the editable state through a
+  // `seedrock-preset/1` JSON file (species + seed + shape/erosion/overlay/style
+  // + per-species params). Mirrors SeedThree's Save/Load folder.
+  const io = gui.addFolder('Save & Load');
+  io.add({ save: () => savePresetFile() }, 'save').name('💾 Save preset');
+  io.add({ load: () => loadPresetFile() }, 'load').name('📂 Load preset');
+
+  function savePresetFile() {
+    // Pull per-species param defaults so the preset captures the FULL state,
+    // not just the legacy 7 fields the GUI exposes.
+    const base = controlsFromSpecies(ctx.species[state.speciesKey]);
+    const preset = toPreset({
+      ...state,
+      // Seed the params from the species defaults so a preset saved without
+      // touching the params still round-trips; if state already has params
+      // (from a prior Load), keep those.
+      params: { ...base.params, ...(state.params ?? {}) },
+    });
+    const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${state.speciesKey}_seed${state.seed}.seedrock.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  function loadPresetFile() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.json,application/json';
+    inp.onchange = async () => {
+      const f = inp.files?.[0];
+      if (!f) return;
+      try {
+        const parsed = JSON.parse(await f.text());
+        const loaded = fromPreset(parsed);
+        state.speciesKey = loaded.speciesKey;
+        state.seed = loaded.seed;
+        state.shape = { ...state.shape, ...loaded.shape };
+        state.erosion = { ...state.erosion, ...loaded.erosion };
+        state.overlay = { ...state.overlay, ...loaded.overlay };
+        if (loaded.style) state.style = loaded.style;
+        state.params = { ...loaded.params };
+        syncFromPreset(ctx.species[state.speciesKey]);
+        gui.controllersRecursive().forEach((c) => c.updateDisplay());
+        ctx.onRegenerate('preset');
+      } catch (e) {
+        console.error('[preset] load failed:', e);
+      }
+    };
+    inp.click();
+  }
+
   function syncFromPreset(preset) {
     state.shape.radius = preset.shape.radius;
     state.shape.detail = preset.shape.detail;
@@ -95,6 +149,8 @@ export function buildGUI(ctx) {
     state.erosion.thermal = preset.erosion.thermal?.enabled !== false;
     state.erosion.hydraulic = preset.erosion.hydraulic?.enabled !== false;
     state.erosion.edgeWear = preset.erosion.edgeWear?.enabled !== false;
+    // Refresh per-species params from the new species' defaults (Phase 2).
+    state.params = controlsFromSpecies(preset).params;
     gui.controllersRecursive().forEach((c) => c.updateDisplay());
   }
 
@@ -105,10 +161,20 @@ export function buildGUI(ctx) {
 
 /**
  * Merge live GUI overrides into a species preset copy.
+ *
+ * Two modes (back-compat + Phase 2 per-species controls):
+ *   • If `state.params` is present, delegate to `applySpeciesControls` so the
+ *     per-species semantic knobs are written through each `set(preset, v)`.
+ *   • Otherwise (legacy state shape from showcase.js / older callers), fall
+ *     back to the original flat-override behaviour.
+ *
  * @param {import('../species/granite.js').RockPreset} preset
  * @param {object} state
  */
 export function applyOverrides(preset, state) {
+  if (state.params) {
+    return applySpeciesControls(preset, state);
+  }
   return {
     ...preset,
     shape: {
