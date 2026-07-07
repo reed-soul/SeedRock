@@ -42,4 +42,29 @@ export const slate = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'beddingRelief', name: 'Bedding relief', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // how pronounced the foliation layering reads — slate.js slab count is
+      // 3–5 from rng; amplitude scales the surface grain that picks out strata.
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.14) / 0.3),
+      set: (s, v) => { s.noise.amplitude = v * 0.3; },
+    },
+    {
+      key: 'surfaceFlakes', name: 'Surface flakes', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // micro-displacement expresses the flaky foliation surface.
+      get: (s) => (s.noise.microAmplitude ?? 0.03) / 0.06,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.06; },
+    },
+    {
+      key: 'edgeSplinter', name: 'Edge splinter', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // slate edges splinter rather than round — high edgeWear strength.
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.08) / 0.15,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.15; },
+    },
+  ],
 };

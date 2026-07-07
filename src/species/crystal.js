@@ -43,4 +43,29 @@ export const crystal = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'clusterDensity', name: 'Cluster density', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // crystal.js spawns 5–9 satellites from rng; radius drives the cluster
+      // footprint. Bigger radius = wider, denser-looking cluster.
+      get: (s) => Math.min(1, (s.shape.radius - 0.6) / 1.4),
+      set: (s, v) => { s.shape.radius = 0.6 + v * 1.4; },
+    },
+    {
+      key: 'facetCrispness', name: 'Facet crispness', group: 'surface',
+      min: 0, max: 1, step: 0.05,
+      // ridged noise → sharp prism facets; smooth → frosted/abraded crystal.
+      get: (s) => (s.noise.ridged ? 0.8 : 0.2),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'tipChipping', name: 'Tip chipping', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // crystals chip at tips/edges — the only erosion pass crystals use.
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.03) / 0.1,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.1; },
+    },
+  ],
 };

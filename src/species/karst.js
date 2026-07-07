@@ -41,4 +41,33 @@ export const karst = {
     reduced: { detail: 3 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'pinnacleSharpness', name: 'Pinnacle sharpness', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // karst pinnacles — ridged noise + high amplitude.
+      get: (s) => (s.noise.ridged ? 0.85 : 0.25),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'dissolutionDepth', name: 'Dissolution depth', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.34) / 0.45),
+      set: (s, v) => { s.noise.amplitude = v * 0.45; },
+    },
+    {
+      key: 'rillenDetail', name: 'Rillen detail', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // rillenkarren — solution flutes on the surface.
+      get: (s) => (s.noise.microAmplitude ?? 0.055) / 0.08,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.08; },
+    },
+    {
+      key: 'edgeSharpness', name: 'Edge sharpness', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.09) / 0.15,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.15; },
+    },
+  ],
 };

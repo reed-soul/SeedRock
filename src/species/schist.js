@@ -42,4 +42,27 @@ export const schist = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'schistosity', name: 'Schistosity', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // foliation relief — the flaky mica layering.
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.22) / 0.35),
+      set: (s, v) => { s.noise.amplitude = v * 0.35; },
+    },
+    {
+      key: 'micaFlakes', name: 'Mica flakes', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.noise.microAmplitude ?? 0.045) / 0.08,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.08; },
+    },
+    {
+      key: 'platyWeathering', name: 'Platy weathering', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // schist weathers along foliation planes.
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.04) / 0.1,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.1; },
+    },
+  ],
 };

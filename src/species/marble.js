@@ -43,4 +43,27 @@ export const marble = {
     reduced: { detail: 3 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'veining', name: 'Veining', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // marble veining rides on low-amplitude displacement.
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.14) / 0.25),
+      set: (s, v) => { s.noise.amplitude = v * 0.25; },
+    },
+    {
+      key: 'polish', name: 'Polish', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // honed/tumbled finish — inversely maps to micro amplitude.
+      get: (s) => 1 - (s.noise.microAmplitude ?? 0.02) / 0.05,
+      set: (s, v) => { s.noise.microAmplitude = (1 - v) * 0.05; },
+    },
+    {
+      key: 'edgeRounding', name: 'Edge rounding', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.04) / 0.1,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.1; },
+    },
+  ],
 };

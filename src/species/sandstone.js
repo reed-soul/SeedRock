@@ -41,4 +41,31 @@ export const sandstone = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'beddingRelief', name: 'Bedding relief', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.22) / 0.4),
+      set: (s, v) => { s.noise.amplitude = v * 0.4; },
+    },
+    {
+      key: 'grainFineness', name: 'Grain fineness', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.noise.microAmplitude ?? 0.025) / 0.06,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.06; },
+    },
+    {
+      key: 'waterGrooves', name: 'Water grooves', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.28) / 0.4),
+      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.4; },
+    },
+    {
+      key: 'edgeSoftness', name: 'Edge softness', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.04) / 0.1,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.1; },
+    },
+  ],
 };

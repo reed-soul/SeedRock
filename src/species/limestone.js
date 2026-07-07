@@ -41,4 +41,33 @@ export const limestone = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'dissolutionPits', name: 'Dissolution pits', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // karst dissolution — amplitude drives cavity depth.
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.2) / 0.35),
+      set: (s, v) => { s.noise.amplitude = v * 0.35; },
+    },
+    {
+      key: 'surfaceGrain', name: 'Surface grain', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.noise.microAmplitude ?? 0.028) / 0.06,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.06; },
+    },
+    {
+      key: 'karstErosion', name: 'Karst erosion', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // limestone dissolves aggressively — strongest hydraulic in the set.
+      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.32) / 0.45),
+      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.45; },
+    },
+    {
+      key: 'rounding', name: 'Rounding', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.035) / 0.1,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.1; },
+    },
+  ],
 };

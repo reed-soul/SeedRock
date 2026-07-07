@@ -41,4 +41,34 @@ export const glacial = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'frostFracturing', name: 'Frost fracturing', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // frost-shattered faces — ridged angular blocks.
+      get: (s) => (s.noise.ridged ? 0.85 : 0.25),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'iceScouring', name: 'Ice scouring', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // glacial polish vs coarse — micro amplitude.
+      get: (s) => (s.noise.microAmplitude ?? 0.04) / 0.08,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.08; },
+    },
+    {
+      key: 'massLoss', name: 'Mass loss', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // glacial quarrying — hydraulic proxy (meltwater).
+      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.22) / 0.4),
+      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.4; },
+    },
+    {
+      key: 'edgeChipping', name: 'Edge chipping', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.06) / 0.12,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.12; },
+    },
+  ],
 };
