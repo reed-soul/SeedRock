@@ -93,13 +93,17 @@ in the code is the discrete rest-angle of granular material. The classic
 computer-graphics formulation for terrain comes from
 [Musgrave, Kolb & Mace 1989](http://www.kenmusgrave.com/dissertation.pdf) [6].
 
-> **Honest limitation (medium confidence).** The current `thermalErode()` (in
-> [`src/generator/erosion.js`](../src/generator/erosion.js)) transports material
-> only along the world-Y axis (`deltas[ix + 1]`), which is the *height-field*
-> form of the model. On a fully 3D rock this means material only falls straight
-> down, not along the local steepest-descent direction. This is fine for boulders
-> (near-convex, gravity-aligned) but underplays talus aprons on overhangs. The
-> Phase 5 refactor would generalize this to true 3D gradient transport.
+> **Update (no longer a limitation).** `thermalErode()` now transports material
+> symmetrically along the true 3D steepest-descent direction (the i→j vector),
+> not just the world-Y axis. On a height-field mesh this degenerates to the
+> classic Y-only behavior; on fully-3D rocks with overhangs or horizontal
+> slopes, material flows along the surface gradient. See
+> [`src/generator/erosion.js`](../src/generator/erosion.js) and the lateral-slope
+> transport test in [`tests/erosion.test.js`](../tests/erosion.test.js).
+>
+> *(Earlier text, kept for context: the Y-axis-only form was the height-field
+> variant of Culling's diffusion model — fine for near-convex boulders but it
+> underplayed talus aprons on overhangs. Fixed in the Phase 5 erosion pass.)*
 
 #### 3.2 Hydraulic erosion → droplet particle simulation
 
@@ -283,20 +287,18 @@ import.
 
 ---
 
-## Future: structure skeleton
+## Structure skeleton (implemented)
 
-The clearest gap vs. SeedThree's architecture is the **absence of a
-topology-first intermediate representation**. SeedThree generates `stems[]`
-(points/radii/orients/winds — pure structure) and *then* meshes them, so LOD,
-wind, and export all reuse one skeleton. SeedRock goes straight primitive →
-geometry, so each form has its own ad-hoc mesher and there is no shared "structure
-graph" the mesher consumes.
+SeedRock now has the topology-first intermediate representation that SeedThree's
+`stems[]` provides for trees. Each form produces a `StructureGraph` before
+meshing: displacement nodes for boulder, joint sets for columnar, foliation
+planes for slate, nucleation points for crystal. The mesher consumes any graph,
+so the same structure can be meshed at multiple LOD levels. See
+[`docs/structure-skeleton.md`](structure-skeleton.md) for the schema and the
+byte-for-byte regression gate.
 
-Phase 5 (design doc only, not yet implemented) proposes a `StructureGraph` schema
-— joint sets for columnar, foliation planes for slate, nucleation points for
-crystal, displacement nodes for boulder — produced before meshing. The geological
-references for each are: columnar jointing physics [8][9], foliation fabrics
-([ETH Zurich structural geology notes](https://www.files.ethz.ch/structuralgeology/jpb/files/english/9foliation.pdf)
+The geological references behind each form's structure: columnar jointing physics
+[8][9], foliation fabrics ([ETH Zurich structural geology notes](https://www.files.ethz.ch/structuralgeology/jpb/files/english/9foliation.pdf)
 [12]; [PSGT9](https://psgt.earth.lsa.umich.edu/chapter/9/fabrics.html) [13]),
 crystal habit ([OpenGeology Mineralogy](https://opengeology.org/Mineralogy/14-mineral-descriptions/) [14]),
 and — aspirational, for `river_cobble` — Domokos–Gibbons pebble abrasion
