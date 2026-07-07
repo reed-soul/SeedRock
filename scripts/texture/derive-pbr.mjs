@@ -25,7 +25,7 @@ import path from 'node:path';
 const SPECIES_ROUGH_BASE = {
   granite: 0.9, sandstone: 0.95, basalt: 0.85, limestone: 0.92,
   volcanic: 0.97, glacial: 0.84, river_cobble: 0.78, karst: 0.88, schist: 0.89,
-  slate: 0.86, crystal: 0.18, marble: 0.28, obsidian: 0.14, ore: 0.4,
+  slate: 0.86, crystal: 0.18, marble: 0.28, obsidian: 0.14, ore: 0.4, ice: 0.08,
 };
 
 const args = process.argv.slice(2);

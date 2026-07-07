@@ -27,6 +27,7 @@ const SPECIES = {
   marble: { rgb: [232, 228, 220], var: 12, grain: 0.05, pore: 0.02, roughBase: 0.28 },
   obsidian: { rgb: [20, 22, 26], var: 8, grain: 0.04, pore: 0.01, roughBase: 0.14 },
   ore: { rgb: [90, 107, 120], var: 24, grain: 0.16, pore: 0.05, roughBase: 0.4 },
+  ice: { rgb: [216, 238, 248], var: 10, grain: 0.04, pore: 0.01, roughBase: 0.08 },
 };
 
 function hash(x, y, seed) {
