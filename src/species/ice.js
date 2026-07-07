@@ -52,4 +52,27 @@ export const ice = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'icicleDensity', name: 'Icicle density', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => Math.min(1, (s.shape.radius - 0.6) / 1.4),
+      set: (s, v) => { s.shape.radius = 0.6 + v * 1.4; },
+    },
+    {
+      key: 'clarity', name: 'Clarity', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // clear ice vs frosted — inverse of micro amplitude.
+      get: (s) => 1 - (s.noise.microAmplitude ?? 0.015) / 0.04,
+      set: (s, v) => { s.noise.microAmplitude = (1 - v) * 0.04; },
+    },
+    {
+      key: 'melting', name: 'Melting', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // rounded dripping tips — edge wear is ice's only erosion pass.
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.02) / 0.06,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.06; },
+    },
+  ],
 };

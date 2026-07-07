@@ -42,4 +42,36 @@ export const basalt = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'columnDensity', name: 'Column density', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // more columns in the cluster → tighter hex pack. Maps to radius-driven
+      // count in columnar.js (count scales with radius).
+      get: (s) => Math.min(1, (s.shape.radius - 0.6) / 1.4),
+      set: (s, v) => { s.shape.radius = 0.6 + v * 1.4; },
+    },
+    {
+      key: 'columnHeightVar', name: 'Column height variance', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // fractured colonnade tops — the displacement amplitude on a columnar
+      // cluster rides on noise.amplitude (structural form uses it as grain).
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.24) / 0.4),
+      set: (s, v) => { s.noise.amplitude = v * 0.4; },
+    },
+    {
+      key: 'angularity', name: 'Angularity', group: 'surface',
+      min: 0, max: 1, step: 0.05,
+      // ridged noise → sharp column edges; smooth → weathered faces.
+      get: (s) => (s.noise.ridged ? 0.85 : 0.3),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'blockWeathering', name: 'Block weathering', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => s.erosion.edgeWear?.strength ?? 0.07,
+      set: (s, v) => { s.erosion.edgeWear.strength = v; },
+    },
+  ],
 };

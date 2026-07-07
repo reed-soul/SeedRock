@@ -43,4 +43,37 @@ export const granite = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  // Semantic knobs → preset fields. UI shows the human name; set() writes the
+  // model term. See src/species/controls.js for the bridge.
+  controls: [
+    {
+      key: 'blockiness', name: 'Blockiness', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // ridged noise → sharp angular blocks; smooth fBm → rounded mass.
+      get: (s) => (s.noise.ridged ? 0.8 : 0.2),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'grainRoughness', name: 'Grain roughness', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // coarse-grained granite → high micro displacement.
+      get: (s) => s.noise.microAmplitude ?? 0.035,
+      set: (s, v) => { s.noise.microAmplitude = v; },
+    },
+    {
+      key: 'fractureWeathering', name: 'Fracture weathering', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // how rounded the block edges become — maps to edgeWear strength.
+      get: (s) => s.erosion.edgeWear?.strength ?? 0.05,
+      set: (s, v) => { s.erosion.edgeWear.strength = v; },
+    },
+    {
+      key: 'rainwear', name: 'Rainwear', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // hydraulic erosion intensity — grooves carved by runoff.
+      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.2) / 0.4),
+      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.4; },
+    },
+  ],
 };

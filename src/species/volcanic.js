@@ -41,4 +41,32 @@ export const volcanic = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'vesicularity', name: 'Vesicularity', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // pumice/tuff porosity — amplitude drives the cavity scale.
+      get: (s) => Math.min(1, (s.noise.amplitude ?? 0.32) / 0.45),
+      set: (s, v) => { s.noise.amplitude = v * 0.45; },
+    },
+    {
+      key: 'vesicleDetail', name: 'Vesicle detail', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.noise.microAmplitude ?? 0.05) / 0.08,
+      set: (s, v) => { s.noise.microAmplitude = v * 0.08; },
+    },
+    {
+      key: 'angularity', name: 'Angularity', group: 'surface',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => (s.noise.ridged ? 0.85 : 0.3),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'edgeRoughness', name: 'Edge roughness', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.08) / 0.15,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.15; },
+    },
+  ],
 };

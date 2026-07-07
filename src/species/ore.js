@@ -44,4 +44,25 @@ export const ore = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'veinDensity', name: 'Vein density', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => Math.min(1, (s.shape.radius - 0.6) / 1.4),
+      set: (s, v) => { s.shape.radius = 0.6 + v * 1.4; },
+    },
+    {
+      key: 'crystalCrispness', name: 'Crystal crispness', group: 'surface',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => (s.noise.ridged ? 0.8 : 0.2),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'encrusting', name: 'Encrusting', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.04) / 0.1,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.1; },
+    },
+  ],
 };

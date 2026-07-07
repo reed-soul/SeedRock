@@ -43,4 +43,28 @@ export const obsidian = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'conchoidalFracture', name: 'Conchoidal fracture', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // shell-like broken-glass facets — ridged noise is the driver.
+      get: (s) => (s.noise.ridged ? 0.85 : 0.25),
+      set: (s, v) => { s.noise.ridged = v >= 0.5; },
+    },
+    {
+      key: 'glassiness', name: 'Glassiness', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // smooth glass vs micro-cracked — inverse of micro amplitude.
+      get: (s) => 1 - (s.noise.microAmplitude ?? 0.02) / 0.05,
+      set: (s, v) => { s.noise.microAmplitude = (1 - v) * 0.05; },
+    },
+    {
+      key: 'shardSharpness', name: 'Shard sharpness', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // obsidian keeps the sharpest edges in the set — high edgeWear.
+      get: (s) => (s.erosion.edgeWear?.strength ?? 0.11) / 0.2,
+      set: (s, v) => { s.erosion.edgeWear.strength = v * 0.2; },
+    },
+  ],
 };

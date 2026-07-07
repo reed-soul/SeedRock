@@ -41,4 +41,29 @@ export const riverCobble = {
     reduced: { detail: 2 },
     impostor: { detail: 1 },
   },
+
+  controls: [
+    {
+      key: 'roundness', name: 'Roundness', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // the Domokos–Gibbons target: how spherical the cobble has become. Low
+      // amplitude + low micro = well-rounded (see docs/generation-design.md §4).
+      get: (s) => 1 - Math.min(1, (s.noise.amplitude ?? 0.16) / 0.3),
+      set: (s, v) => { s.noise.amplitude = (1 - v) * 0.3; },
+    },
+    {
+      key: 'surfacePolish', name: 'Surface polish', group: 'surface',
+      min: 0, max: 1, step: 0.01,
+      // river-worn smoothness — inversely maps to micro amplitude.
+      get: (s) => 1 - (s.noise.microAmplitude ?? 0.02) / 0.05,
+      set: (s, v) => { s.noise.microAmplitude = (1 - v) * 0.05; },
+    },
+    {
+      key: 'fluvialWear', name: 'Fluvial wear', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // strongest hydraulic erosion in the set — cobbles live in water.
+      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.35) / 0.5),
+      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.5; },
+    },
+  ],
 };
