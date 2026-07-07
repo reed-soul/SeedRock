@@ -22,7 +22,7 @@ const OUT_DIR = path.resolve(__dirname, '../../public/assets/textures');
 const SPECIES_IDS = [
   'granite', 'sandstone', 'basalt', 'limestone', 'volcanic', 'glacial',
   'river_cobble', 'karst', 'schist',
-  'slate', 'crystal', 'marble', 'obsidian', 'ore',
+  'slate', 'crystal', 'marble', 'obsidian', 'ore', 'ice',
 ];
 
 function parseArgs(argv) {
