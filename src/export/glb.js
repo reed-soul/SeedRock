@@ -1,5 +1,5 @@
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-import { Box3, Group, Mesh, Vector3 } from 'three/webgpu';
+import { Box3, BufferGeometry, Group, Mesh, Vector3 } from 'three/webgpu';
 
 class MSFTLodExtension {
   constructor(writer, lodSource) {
@@ -73,7 +73,7 @@ function cloneLevelObject(src, lodIndex, baseName) {
   return lg;
 }
 
-function buildExportTree(lodRoot) {
+function buildExportTree(lodRoot, opts = {}) {
   const baseName = lodRoot.name.replace(/_LOD\d+$/, '') || lodRoot.name;
   const root = new Group();
   root.name = baseName;
@@ -85,7 +85,49 @@ function buildExportTree(lodRoot) {
     root.add(cloneLevelObject(level.object, i, baseName));
   });
 
+  // Optional physics collider proxy: a position-only mesh sourced from the
+  // reduced LOD (level 1) geometry. Engines like Unity/Godot/Unreal identify
+  // collision meshes by the `_collider` name suffix — invisible at render,
+  // consumed by the physics import. Using the reduced-LOD geometry matches the
+  // community guidance ("never use the full mesh as a rock collider"); the
+  // position-only attribute set keeps the proxy small.
+  if (opts.collider !== false && lodRoot.levels.length >= 2) {
+    const collider = buildColliderMesh(lodRoot.levels[1].object, baseName);
+    if (collider) root.add(collider);
+  }
+
   return root;
+}
+
+/**
+ * Build a simplified collider mesh from a source LOD level's geometry.
+ * Strips every attribute except position (no normals/uvs → tiny proxy) and
+ * marks it invisible so it doesn't render, only serves physics on import.
+ * Returns null if the source has no usable mesh geometry.
+ */
+export function buildColliderMesh(srcLevel, baseName) {
+  let srcGeo = null;
+  srcLevel.traverse((o) => {
+    if (!srcGeo && o.isMesh && o.geometry) srcGeo = o.geometry;
+  });
+  if (!srcGeo) return null;
+
+  const pos = srcGeo.attributes.position;
+  if (!pos || pos.count === 0) return null;
+
+  // Position-only geometry: drop normals/uvs to minimise the proxy footprint.
+  // Plain BufferGeometry (not srcGeo.constructor — that would re-instantiate
+  // IcosahedronGeometry etc. and regenerate all attributes we want stripped).
+  const geo = new BufferGeometry();
+  geo.setAttribute('position', pos.clone());
+  if (srcGeo.index) geo.setIndex(srcGeo.index.clone());
+  geo.computeBoundingBox();
+  geo.computeBoundingSphere();
+
+  const mesh = new Mesh(geo);
+  mesh.name = `${baseName}_collider`;
+  mesh.visible = false;
+  return mesh;
 }
 
 export async function exportGLB(object3d, opts = {}) {
@@ -99,7 +141,7 @@ export async function exportGLB(object3d, opts = {}) {
     exporter.register((writer) => new MSFTLodExtension(writer, lodRoot));
   }
 
-  const exportRoot = lodRoot ? buildExportTree(lodRoot) : object3d;
+  const exportRoot = lodRoot ? buildExportTree(lodRoot, opts) : object3d;
   const result = await exporter.parseAsync(exportRoot, {
     binary: true,
     onlyVisible: opts.onlyVisible ?? false,

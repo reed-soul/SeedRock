@@ -20,6 +20,7 @@ export const SHOWCASE = {
   quality: 'high',
   perfHud: false,
   style: 'pbr',
+  exportCollider: true,
   paint: {
     spacing: 0.3,
     scaleMin: 0.15,
@@ -90,6 +91,7 @@ export function createShowcaseState() {
     quality: SHOWCASE.quality,
     perfHud: SHOWCASE.perfHud,
     style: SHOWCASE.style,
+    exportCollider: SHOWCASE.exportCollider,
     paint: { ...SHOWCASE.paint },
   };
 }

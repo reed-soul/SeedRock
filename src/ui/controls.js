@@ -81,6 +81,7 @@ export function buildGUI(ctx) {
   folders.paint.add(state.paint, 'randomRot').name('Random Rotation').onChange(() => state.onPaintParams?.());
   folders.paint.add({ clear: () => state.onPaintClear?.() }, 'clear').name('Clear Painted');
 
+  folders.export.add(state, 'exportCollider').name('With Collider');
   folders.export.add({ exportGlb: async () => {
     const bytes = await ctx.onExport();
     if (bytes) console.log(`[SeedRock] exported ${(bytes / 1024).toFixed(1)} KB`);
