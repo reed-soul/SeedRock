@@ -1,14 +1,41 @@
-# Structure Skeleton — Design (not yet implemented)
+# Structure Skeleton — Implemented
 
-> **Status: design only.** This document specifies a `StructureGraph` intermediate
-> representation that the four form factories would produce before meshing. It is
-> **not implemented** — the current forms go straight primitive → geometry. This is
+> **Status: implemented.** The four form factories (`boulder`, `columnar`,
+> `slate`, `crystal`) now produce a `StructureGraph` before meshing. This was
 > the Phase 5 roadmap entry from [`generation-design.md`](generation-design.md) §
-> "Future: structure skeleton", expanded to a concrete schema.
+> "Future: structure skeleton", rolled out across four refactor commits and
+> gated by byte-for-byte regression tests.
 >
 > References here re-use citations already verified in `generation-design.md`
 > (Weber–Penn, Goehring, Culling, Worley, Domokos–Gibbons) — see that file's
 > [References](generation-design.md#references) for URLs.
+
+## What landed
+
+| Form | Graph schema | Implementation |
+|---|---|---|
+| **boulder** | displacement-node graph — each icosahedron vertex's final displaced position precomputed | [`src/generator/structure/boulder.js`](../src/generator/structure/boulder.js) |
+| **columnar** | joint set — hex close-pack column topology (centre, height, radius, tilt) | [`src/generator/structure/columnar.js`](../src/generator/structure/columnar.js) |
+| **slate** | foliation planes — stack of slab footprints | [`src/generator/structure/slate.js`](../src/generator/structure/slate.js) |
+| **crystal** | nucleation pattern — central + satellite shards | [`src/generator/structure/crystal.js`](../src/generator/structure/crystal.js) |
+
+Dispatch: [`src/generator/structure/graph.js`](../src/generator/structure/graph.js)
+(`buildStructureGraph` / `meshStructureGraph`). `mesh.js`'s `generateRockGeometry`
+routes through it; its signature and behavior are unchanged, so `lod.js`,
+`paint.js`, `scatter.js`, `main.js`, and `api/seedrock.js` needed zero edits.
+
+## Regression gate
+
+[`tests/structure.test.js`](../tests/structure.test.js) compares the meshed
+output of all four forms against pre-refactor baselines in
+[`tests/golden/`](../tests/golden/) (captured by
+[`scripts/capture-baseline.mjs`](../scripts/capture-baseline.mjs)) at **8-decimal
+vertex precision**. All four pass — the refactor is byte-identical to the legacy
+implementation for the same `(species, seed)`.
+
+[`tests/forms.test.js`](../tests/forms.test.js) keeps its original bbox/determinism
+assertions via the [`forms/`](../src/generator/forms/) compatibility shims, which
+now delegate to `structure/`.
 
 ## Why a structure skeleton?
 
