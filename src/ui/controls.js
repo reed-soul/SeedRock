@@ -121,6 +121,11 @@ export function buildGUI(ctx) {
     inp.onchange = async () => {
       const f = inp.files?.[0];
       if (!f) return;
+      const MAX_PRESET_BYTES = 1_048_576;
+      if (f.size > MAX_PRESET_BYTES) {
+        console.error(`[preset] file too large (${f.size} bytes, max ${MAX_PRESET_BYTES})`);
+        return;
+      }
       try {
         const parsed = JSON.parse(await f.text());
         const loaded = fromPreset(parsed);

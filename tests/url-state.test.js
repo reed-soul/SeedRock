@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyUrlState, buildViewerUrl } from '../src/ui/url-state.js';
+import { applyUrlState, buildViewerUrl, resolveSpeciesKey } from '../src/ui/url-state.js';
 import { createDefaultState } from '../src/ui/controls.js';
 
 describe('url-state', () => {
@@ -76,5 +76,25 @@ describe('url-state', () => {
     assert.equal(state.speciesKey, 'granite');
     assert.equal(state.seed, 5);
     assert.equal(state.sceneMode, 'living');
+  });
+
+  it('resolves snake_case species aliases (river_cobble → riverCobble)', () => {
+    assert.equal(resolveSpeciesKey('river_cobble'), 'riverCobble');
+    const state = createDefaultState();
+    applyUrlState(state, new URLSearchParams('species=river_cobble&seed=77'));
+    assert.equal(state.speciesKey, 'riverCobble');
+  });
+
+  it('applies scene=paint mode', () => {
+    const state = createDefaultState();
+    applyUrlState(state, new URLSearchParams('scene=paint'));
+    assert.equal(state.sceneMode, 'paint');
+  });
+
+  it('clamps per-species p.<key> params to declared min/max', () => {
+    const state = createDefaultState();
+    applyUrlState(state, new URLSearchParams('species=granite&p.blockiness=99&p.grainRoughness=-5'));
+    assert.equal(state.params.blockiness, 1);
+    assert.equal(state.params.grainRoughness, 0);
   });
 });

@@ -41,7 +41,7 @@ The live viewer opens to a **curated Karst canyon** — cliff face, scattered bo
 </tr>
 <tr>
 <td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=glacial&seed=3310&scene=living&moss=0.30"><img src="docs/images/shots/glacial.png" width="180"><br><sub>Glacial</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=river_cobble&seed=77&scene=living&moss=0.20"><img src="docs/images/shots/river-cobble.png" width="180"><br><sub>River Cobble</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=riverCobble&seed=77&scene=living&moss=0.20"><img src="docs/images/shots/river-cobble.png" width="180"><br><sub>River Cobble</sub></a></td>
 <td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=karst&seed=3310&scene=living&moss=0.18"><img src="docs/images/shots/karst.png" width="180"><br><sub>Karst</sub></a></td>
 <td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=schist&seed=256&scene=living&moss=0.12"><img src="docs/images/shots/schist.png" width="180"><br><sub>Schist</sub></a></td>
 <td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=slate&seed=512&scene=living&moss=0.05"><img src="docs/images/shots/slate.png" width="180"><br><sub>Slate <sub>foliated</sub></sub></a></td>

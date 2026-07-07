@@ -1,9 +1,10 @@
 // Scatter Painting — drag on the terrain to drop rock instances in real time.
 //
-// A PaintBrush owns one InstancedMesh per species (preallocated to MAX_PAINT,
-// grown by bumping `im.count` as slots are filled; the ring buffer wraps so the
-// oldest instance is overwritten once the cap is hit). Pointer events raycast
-// against the terrain mesh; a distance gate prevents clumping on slow drags.
+// A PaintBrush owns one InstancedMesh per geometry variant (preallocated to
+// MAX_PAINT per variant, grown by bumping `im.count` as slots are filled; the
+// ring buffer wraps so the oldest instance is overwritten once the cap is hit).
+// Pointer events raycast against the terrain mesh; a distance gate prevents
+// clumping on slow drags.
 //
 // Geometry comes from generateRockGeometry with 3 pre-baked variants (matching
 // the existing scatter.js pattern), and the material is shared with the hero
@@ -50,6 +51,15 @@ export function nextSlot(slot, count) {
 }
 
 /**
+ * Pick a variant index for a new paint drop (mirrors scatter.js cycling).
+ * @param {import('../core/rng.js').Rng} rng
+ * @param {number} variantCount
+ */
+export function pickVariantIndex(rng, variantCount) {
+  return rng.int(0, variantCount - 1);
+}
+
+/**
  * @param {object} opts
  * @param {import('three').Scene} opts.scene
  * @param {import('three').Camera} opts.camera
@@ -77,11 +87,9 @@ export class PaintBrush {
     this.group = new Group();
     this.group.name = 'paint';
 
-    // One InstancedMesh per active species; rebuilt when species changes.
-    this.mesh = null;
+    // One InstancedMesh per variant; rebuilt when species changes.
+    this.layers = [];
     this.variants = [];
-    this.slot = 0;
-    this.count = 0;
     this.lastDrop = null;     // world point of last placed instance
     this.painting = false;    // pointer currently down
 
@@ -91,14 +99,21 @@ export class PaintBrush {
     this._onUp = this._onPointerUp.bind(this);
   }
 
-  /** Build / rebuild the InstancedMesh for the current species. Clears artwork. */
+  get count() {
+    return this.layers.reduce((n, layer) => n + layer.count, 0);
+  }
+
+  /** Build / rebuild InstancedMeshes for the current species. Clears artwork. */
   setSpecies() {
     this.clear();
-    if (this.mesh) {
-      this.group.remove(this.mesh);
-      this.variants.forEach((g) => g.dispose());
-      this.mesh.dispose();
+    for (const layer of this.layers) {
+      this.group.remove(layer.mesh);
+      layer.mesh.dispose();
     }
+    this.variants.forEach((g) => g.dispose());
+    this.layers = [];
+    this.variants = [];
+
     const preset = this.getPreset();
     const mat = this.getMaterial();
     if (!preset || !mat) return;
@@ -124,14 +139,17 @@ export class PaintBrush {
     });
 
     // Three.js InstancedMesh can't grow after construction — preallocate the
-    // cap and fill slots via setMatrixAt, bumping `count` as we go.
-    this.mesh = new InstancedMesh(this.variants[0], mat, MAX_PAINT);
-    this.mesh.count = 0;
-    this.mesh.castShadow = true;
-    this.mesh.receiveShadow = true;
-    this.mesh.frustumCulled = false;       // boundingSphere would cull early as count grows
-    this.mesh.name = 'paint_instances';
-    this.group.add(this.mesh);
+    // cap per variant and fill slots via setMatrixAt, bumping `count` as we go.
+    this.layers = this.variants.map((geo, vi) => {
+      const mesh = new InstancedMesh(geo, mat, MAX_PAINT);
+      mesh.count = 0;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      mesh.name = `paint_instances_${vi}`;
+      this.group.add(mesh);
+      return { mesh, slot: 0, count: 0 };
+    });
   }
 
   setParams(p) {
@@ -144,7 +162,7 @@ export class PaintBrush {
 
   enable() {
     if (this.enabled) return;
-    if (!this.mesh) this.setSpecies();
+    if (!this.layers.length) this.setSpecies();
     this.enabled = true;
     this.dom.addEventListener('pointerdown', this._onDown);
     window.addEventListener('pointermove', this._onMove);
@@ -164,10 +182,12 @@ export class PaintBrush {
   }
 
   clear() {
-    this.slot = 0;
-    this.count = 0;
     this.lastDrop = null;
-    if (this.mesh) this.mesh.count = 0;
+    for (const layer of this.layers) {
+      layer.slot = 0;
+      layer.count = 0;
+      layer.mesh.count = 0;
+    }
   }
 
   /** Raycast the terrain under the cursor; returns the hit point or null. */
@@ -184,14 +204,16 @@ export class PaintBrush {
 
   /** Place one instance at a world point (seat against the terrain). */
   _drop(point) {
-    if (!this.mesh) return;
+    if (!this.layers.length) return;
     const { scaleMin, scaleMax, randomRot } = this.params;
     const rng = new Rng(`paint-drop:${this.count}:${point.x.toFixed(3)}:${point.z.toFixed(3)}`);
     const scale = rng.range(scaleMin, scaleMax);
+    const vi = pickVariantIndex(rng, this.variants.length);
+    const layer = this.layers[vi];
 
     // Seat: drop the bounding-box bottom to the terrain surface so the rock
     // sits IN the ground rather than hovering. Mirrors scatter.js seating.
-    const bbox = this.variants[0].boundingBox;
+    const bbox = this.variants[vi].boundingBox;
     const seatY = bbox ? point.y - bbox.min.y * scale : point.y;
 
     _pos.set(point.x, seatY, point.z);
@@ -204,11 +226,11 @@ export class PaintBrush {
     _quat.setFromEuler(_eul);
     _mat.compose(_pos, _quat, _scl);
 
-    this.mesh.setMatrixAt(this.slot, _mat);
-    this.slot = nextSlot(this.slot, this.count);
-    this.count = Math.min(this.count + 1, MAX_PAINT);
-    this.mesh.count = this.count;
-    this.mesh.instanceMatrix.needsUpdate = true;
+    layer.mesh.setMatrixAt(layer.slot, _mat);
+    layer.slot = nextSlot(layer.slot, layer.count);
+    layer.count = Math.min(layer.count + 1, MAX_PAINT);
+    layer.mesh.count = layer.count;
+    layer.mesh.instanceMatrix.needsUpdate = true;
     this.lastDrop = point;
   }
 
@@ -236,7 +258,8 @@ export class PaintBrush {
   dispose() {
     this.disable();
     this.variants.forEach((g) => g.dispose());
-    this.mesh?.dispose();
+    for (const layer of this.layers) layer.mesh.dispose();
+    this.layers = [];
     this.group.clear();
   }
 }

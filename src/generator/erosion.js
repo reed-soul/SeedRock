@@ -64,9 +64,10 @@ export function thermalErode(positions, neighbors, count, params = {}) {
   const iterations = params.iterations ?? 12;
   const talus = params.talus ?? 0.04;
   const rate = params.rate ?? 0.35;
+  const deltas = new Float32Array(count * 3);
 
   for (let iter = 0; iter < iterations; iter++) {
-    const deltas = new Float32Array(count * 3);
+    deltas.fill(0);
 
     for (let i = 0; i < count; i++) {
       const ix = i * 3;

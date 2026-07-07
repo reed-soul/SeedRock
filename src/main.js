@@ -7,6 +7,7 @@ import { SPECIES, DEFAULT_SPECIES } from './species/index.js';
 import { buildGUI, applyOverrides, createDefaultState } from './ui/controls.js';
 import { applyUrlState } from './ui/url-state.js';
 import { applyCameraPreset } from './ui/showcase.js';
+import { createToonPipeline } from './render/toon-pipeline.js';
 import { buildLivingScene, buildHeroRock, disposeLivingScene, disposeHeroRock } from './generator/scene-build.js';
 import { generateRockGeometry } from './generator/mesh.js';
 import { PaintBrush } from './generator/paint.js';
@@ -51,15 +52,13 @@ async function main() {
 
   const { scene, camera, renderer, controls, grid } = sceneCtx;
 
-  // Toon outline: a PostProcessing chain that adds a BackSide-normal-extruded
-  // ink outline. Only active when style === 'toon' (PBR/lowpoly render direct).
-  // Built once; render loop branches on state.style.
-  let toonPost = null;
-  function ensureToonPost() {
-    if (toonPost) return toonPost;
-    toonPost = new THREE.PostProcessing();
-    toonPost.outputNode = THREE.toonOutlinePass(scene, camera, new THREE.Color(0, 0, 0), 0.004, 1.0);
-    return toonPost;
+  // Toon outline: RenderPipeline + TSL toonOutlinePass. Only active when
+  // style === 'toon' (PBR/lowpoly render direct). Built once; render loop branches.
+  let toonPipeline = null;
+  function ensureToonPipeline() {
+    if (toonPipeline) return toonPipeline;
+    toonPipeline = createToonPipeline(renderer, scene, camera);
+    return toonPipeline;
   }
 
   const state = createDefaultState();
@@ -144,6 +143,7 @@ async function main() {
 
   async function rebuildRock() {
     const gen = ++rebuildGen;
+    window.__SEEDROCK_READY = false;
     setLoading(true, 'Generating rock…', 0.35);
     disposeContent();
 
@@ -209,6 +209,7 @@ async function main() {
     if (state.sceneMode === 'paint' && !brush.enabled) state.onPaintEnter?.();
     updateHud(preset);
     setLoading(false);
+    window.__SEEDROCK_READY = true;
   }
 
   function countVertices(root) {
@@ -274,8 +275,7 @@ async function main() {
     const lod = currentRoot?.userData?.hero ?? (currentRoot?.isLOD ? currentRoot : null);
     if (lod?.isLOD) lod.update(camera);
     if (state.style === 'toon') {
-      ensureToonPost();
-      toonPost.renderAsync();
+      ensureToonPipeline().render();
     } else {
       renderer.render(scene, camera);
     }
