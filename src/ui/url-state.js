@@ -35,6 +35,9 @@ export function applyUrlState(state, params = new URLSearchParams(location.searc
 
   if (params.get('lod') === '0') state.useLOD = false;
   if (params.get('rotate') === '0') state.autoRotate = false;
+
+  const style = params.get('style');
+  if (style === 'pbr' || style === 'lowpoly' || style === 'toon') state.style = style;
 }
 
 /**

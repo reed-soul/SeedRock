@@ -10,40 +10,61 @@
 
 </div>
 
-A fully procedural rock and cliff generator: pick a rock type, tune its parameters, and get a unique, textured, erosion-sculpted 3D rock you can drop into a scene or export to glTF. **Paint rocks directly onto terrain** with the brush tool, or generate a full living scene in one click.
+A fully procedural rock **and beyond** generator: pick a species, tune its parameters, and get a unique, textured, erosion-sculpted 3D mesh you can drop into a scene or export to glTF. **Paint rocks directly onto terrain**, render in **three styles** (PBR / Low Poly / Toon), or generate a full living scene in one click.
 
 The live viewer opens to a **curated Karst canyon** — cliff face, scattered boulders, moss, and atmospheric terrain — not a debug grid on a gray plane.
 
-> **Status: `1.2`.** Nine rock types, terrain scatter-painting, moss & snow overlays, optional AO maps, full LOD + impostor pipeline, AI texture workflow, tests, and community docs.
+> **Status: `1.3`.** Fifteen species across rocks + crystal + ice, three render styles, terrain scatter-painting, collider export, moss & snow overlays, full LOD + impostor pipeline, AI texture workflow, tests.
 
-### Nine rock types
+### Three render styles — one seed, three looks
 
 <div align="center">
 <table>
 <tr>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=granite&seed=42&scene=living&moss=0.15"><img src="docs/images/shots/granite.png" width="200"><br><sub>Granite</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=sandstone&seed=117&scene=living"><img src="docs/images/shots/sandstone.png" width="200"><br><sub>Sandstone</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=basalt&seed=88&scene=living"><img src="docs/images/shots/basalt.png" width="200"><br><sub>Basalt</sub></a></td>
-</tr>
-<tr>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=limestone&seed=204&scene=living&moss=0.10"><img src="docs/images/shots/limestone.png" width="200"><br><sub>Limestone</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=volcanic&seed=13&scene=living"><img src="docs/images/shots/volcanic.png" width="200"><br><sub>Volcanic</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=glacial&seed=3310&scene=living&moss=0.30"><img src="docs/images/shots/glacial.png" width="200"><br><sub>Glacial</sub></a></td>
-</tr>
-<tr>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=river_cobble&seed=77&scene=living&moss=0.20"><img src="docs/images/shots/river-cobble.png" width="200"><br><sub>River Cobble</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=karst&seed=3310&scene=living&moss=0.18"><img src="docs/images/shots/karst.png" width="200"><br><sub>Karst</sub></a></td>
-<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=schist&seed=256&scene=living&moss=0.12"><img src="docs/images/shots/schist.png" width="200"><br><sub>Schist</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=granite&seed=42&scene=single&style=pbr"><img src="docs/images/style-pbr.png" width="260"><br><sub><b>PBR</b> — realistic</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=granite&seed=42&scene=single&style=lowpoly"><img src="docs/images/style-lowpoly.png" width="260"><br><sub><b>Low Poly</b> — flat-shaded</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=granite&seed=42&scene=single&style=toon"><img src="docs/images/style-toon.png" width="260"><br><sub><b>Toon</b> — cel + ink outline</sub></a></td>
 </tr>
 </table>
 </div>
 
-*Click any rock to open it in the live viewer.* Each type has its own erosion profile (granite fractures differently from karst dissolution), noise scales, and a 1024px AI-derived PBR set.
+### Fifteen species — rocks, crystals, ice
+
+<div align="center">
+<table>
+<tr>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=granite&seed=42&scene=living&moss=0.15"><img src="docs/images/shots/granite.png" width="180"><br><sub>Granite</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=sandstone&seed=117&scene=living"><img src="docs/images/shots/sandstone.png" width="180"><br><sub>Sandstone</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=basalt&seed=88&scene=living"><img src="docs/images/shots/basalt.png" width="180"><br><sub>Basalt <sub>columnar</sub></sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=limestone&seed=204&scene=living&moss=0.10"><img src="docs/images/shots/limestone.png" width="180"><br><sub>Limestone</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=volcanic&seed=13&scene=living"><img src="docs/images/shots/volcanic.png" width="180"><br><sub>Volcanic</sub></a></td>
+</tr>
+<tr>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=glacial&seed=3310&scene=living&moss=0.30"><img src="docs/images/shots/glacial.png" width="180"><br><sub>Glacial</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=river_cobble&seed=77&scene=living&moss=0.20"><img src="docs/images/shots/river-cobble.png" width="180"><br><sub>River Cobble</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=karst&seed=3310&scene=living&moss=0.18"><img src="docs/images/shots/karst.png" width="180"><br><sub>Karst</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=schist&seed=256&scene=living&moss=0.12"><img src="docs/images/shots/schist.png" width="180"><br><sub>Schist</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=slate&seed=512&scene=living&moss=0.05"><img src="docs/images/shots/slate.png" width="180"><br><sub>Slate <sub>foliated</sub></sub></a></td>
+</tr>
+<tr>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=marble&seed=200&scene=living"><img src="docs/images/shots/marble.png" width="180"><br><sub>Marble</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=obsidian&seed=13&scene=living"><img src="docs/images/shots/obsidian.png" width="180"><br><sub>Obsidian</sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=crystal&seed=88&scene=living"><img src="docs/images/shots/crystal.png" width="180"><br><sub>Crystal <sub>cluster</sub></sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=ore&seed=64&scene=living"><img src="docs/images/shots/ore.png" width="180"><br><sub>Ore <sub>vein</sub></sub></a></td>
+<td align="center"><a href="https://reed-soul.github.io/SeedRock/?species=ice&seed=3310&scene=living&moss=0.10"><img src="docs/images/shots/ice.png" width="180"><br><sub>Ice <sub>translucent</sub></sub></a></td>
+</tr>
+</table>
+</div>
+
+*Click any tile to open it in the live viewer.* Four geometry primitives (boulder / columnar / slate / crystal) drive the silhouettes; each species carries its own erosion profile, noise scales, and a 1024px AI-derived PBR set.
 
 ## Features
 
-- **Nine rock types** — Granite, Sandstone, Limestone, Basalt, Volcanic, Glacial, River Cobble, Karst, Schist
-- **Terrain scatter-painting** — switch to Paint mode and brush rocks directly onto the terrain; painted rocks survive species changes and export with the scene
+- **Three render styles** — PBR (realistic), Low Poly (flat-shaded), Toon (cel shading + ink outline)
+- **Fifteen species** — nine rocks + slate/marble/obsidian (metamorphic & volcanic glass) + crystal/ore (mineral clusters) + ice (transmission)
+- **Four form primitives** — boulder, columnar (hex-prism colonnades), slate (foliated slabs), crystal (radiating shard clusters)
+- **Terrain scatter-painting** — brush rocks directly onto the terrain; painted rocks survive species changes and export with the scene
+- **Collider export** — GLB includes a `<rock>_collider` physics proxy (reduced-LOD geometry) for Unity/Godot/Unreal import
 - **Erosion simulation** — hydraulic, thermal, and edge-wear passes on every rock
 - **PBR textures** — 1024px AI albedo (Gemini) + Sobel-derived normal/roughness/AO per species
 - **Moss / snow overlays** — slope-driven biome cover with dedicated PBR texture sets
@@ -149,8 +170,14 @@ Following the same cross-agent collaboration model as [SeedThree](https://github
 - [x] GitHub Pages live demo
 - [x] Glacial rock type
 - [x] AI texture prompts + ingest pipeline
-- [x] Full AI PBR set for all 9 species (Gemini albedo + Sobel-derived normal/roughness/AO)
+- [x] Full AI PBR set for all species (Gemini albedo + Sobel-derived normal/roughness/AO)
 - [x] Terrain scatter-painting (brush rocks directly onto the ground)
+- [x] Stylization pipeline — PBR / Low Poly / Toon render styles
+- [x] Form primitives — columnar / slate / crystal geometry (beyond displacement spheres)
+- [x] Species expansion — marble / obsidian / ore / slate / crystal / ice (9 → 15)
+- [x] Toon outline pass (BackSide-normal-extruded ink line)
+- [x] Ice with transmission material (MeshPhysicalNodeMaterial, ior 1.31)
+- [x] Auto collider proxy in GLB export (`*_collider` for engine physics import)
 - [x] Community contribution docs + CI tests
 
 ## License
