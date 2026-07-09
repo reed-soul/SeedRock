@@ -244,16 +244,16 @@ https://github.com/reed-soul/SeedRock
 
 ---
 
-## 6. GitHub repo topics (one-time, big long-tail payoff)
+## 6. GitHub repo topics (done)
 
-Go to https://github.com/reed-soul/SeedRock and add these topics (gear icon ⚙ top-right of repo header):
+Topics are already set on the repo:
 
 ```
 threejs  webgpu  procedural-generation  gamedev  rocks  gltf  pbr  three-js
 graphics  noise  erosion  webgl  procedural  glb  threejs-webgpu
 ```
 
-These get you indexed into GitHub Explore and the topics pages — slow but steady organic discovery.
+No action needed unless you want to add more.
 
 ---
 
@@ -272,7 +272,8 @@ PR template: "Hi, I'd like to add SeedRock — an open-source procedural rock ge
 
 ## Publishing checklist
 
-- [ ] GitHub topics added (section 6 — takes 1 minute, do first)
+- [x] GitHub topics added (section 6 — already on the repo)
+- [ ] Close stale scaffold issues #1–#8 (early Phase tracking; all shipped in 1.3+)
 - [ ] HN: post Tue–Thu 9–11 AM ET
 - [ ] Reddit r/gamedev (with mp4)
 - [ ] Reddit r/webdev OR r/SideProject (with mp4) — not same day as r/gamedev
@@ -281,3 +282,9 @@ PR template: "Hi, I'd like to add SeedRock — an open-source procedural rock ge
 - [ ] 掘金长文
 - [ ] (optional) Awesome-list PRs
 - [ ] (optional) Product Hunt — pick a Tue or Wed, prepare a 60s version of the video
+
+### Manual issue cleanup (owner)
+
+Issues #1–#8 are early scaffold trackers (noise mesh, erosion, PBR, GUI, export,
+species). They are all implemented. Close them with a short note pointing at the
+README roadmap so newcomers don't think the project is unfinished.

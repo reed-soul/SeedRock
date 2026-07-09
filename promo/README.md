@@ -35,6 +35,15 @@ pnpm promo:video     # ffmpeg → 30s mp4 + 3 GIFs (takes ~8 seconds)
 Then open `COPY.md` and post, platform by platform, following the checklist at
 the bottom of that file.
 
+**Launch order (recommended):**
+
+1. Confirm GitHub topics are set (already done on this repo).
+2. Close issues #1–#8 (scaffold trackers — see COPY.md checklist).
+3. Show HN (Tue–Thu 9–11 AM ET) with the live demo URL.
+4. Same day or next: Reddit r/gamedev + Twitter/X thread with `promo/video/seedrock-30s.mp4`.
+5. Chinese platforms (V2EX / 掘金) with the 中文 copy in COPY.md.
+6. After a few days of feedback: awesome-list PRs / Product Hunt.
+
 ## Regenerating
 
 If you add a species or change the hero shot, edit the `SCENES` array in
