@@ -7,7 +7,8 @@
 // payload (boulder | columnar | slate | crystal). Each form has a builder that
 // produces the graph from a preset + rng (pure data, no triangles) and a mesher
 // that turns the graph into a BufferGeometry. builders use the SAME rng draw
-// order as the legacy form factories did, so (species, seed) output is identical.
+// order as the legacy form factories did, so (species, seed) output is identical
+// at the build-time detail.
 
 import { buildBoulderGraph, meshBoulder } from './boulder.js';
 import { buildColumnarGraph, meshColumnar } from './columnar.js';
@@ -45,6 +46,7 @@ export function buildStructureGraph(preset, rng, noise) {
 /**
  * Mesh a StructureGraph into a BufferGeometry at the requested detail / style.
  * Dispatches on `graph.form`. Pure geometry — caller handles normals/erosion.
+ * The same graph may be meshed repeatedly at different details (LOD reuse).
  *
  * @param {object} graph  from buildStructureGraph
  * @param {{ detail?: number, style?: string }} [opts]
@@ -56,4 +58,14 @@ export function meshStructureGraph(graph, opts = {}) {
   if (graph.form === 'slate')    return meshSlate(graph.slate, opts);
   if (graph.form === 'crystal')  return meshCrystal(graph.crystal, opts);
   throw new Error(`[structure] unknown graph form "${graph.form}"`);
+}
+
+/**
+ * Default (build-time) detail stored on a StructureGraph payload.
+ * @param {object} graph
+ * @returns {number}
+ */
+export function graphDetail(graph) {
+  const payload = graph[graph.form];
+  return payload?.detail ?? 4;
 }

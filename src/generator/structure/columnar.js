@@ -2,7 +2,10 @@
 // Migrated byte-for-byte from forms/columnar.js: buildColumnarGraph captures the
 // per-column parameters (hex close-pack centres + jitter + height/tilt/radius),
 // meshColumnar recreates the CylinderGeometry colonnade. Same rng order, same
-// merge order → identical vertex output.
+// merge order → identical vertex output at the build-time detail.
+//
+// LOD: the same joint set remeshes at lower radial resolution without rebuilding
+// topology — StructureGraph's reason to exist.
 
 import { CylinderGeometry, Vector3, Matrix4, Quaternion, Euler } from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -14,7 +17,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
  * @param {object} shape
  * @param {object} _noise  (unused for the primary form — columnar is structural)
  * @param {import('../../core/rng.js').Rng} rng
- * @returns {{ columns: Array<{ x: number, z: number, h: number, r: number, euler: [number,number,number] }>, baseRadius: number }}
+ * @returns {{ columns: Array<{ x: number, z: number, h: number, r: number, euler: [number,number,number] }>, baseRadius: number, detail: number }}
  */
 export function buildColumnarGraph(shape, _noise, rng) {
   const radius = shape.radius ?? 1;
@@ -58,7 +61,17 @@ export function buildColumnarGraph(shape, _noise, rng) {
     const ez = rng.vary(0, 0.12);
     columns.push({ x, z, h, r, euler: [ex, ey, ez] });
   }
-  return { columns, baseRadius: radius };
+  return { columns, baseRadius: radius, detail: shape.detail ?? 4 };
+}
+
+/**
+ * Radial segments for a columnar mesh at a given LOD detail.
+ * detail ≥ 3 keeps the hex (6) silhouette of the legacy full mesh.
+ */
+export function columnarRadialSegments(detail) {
+  if (detail >= 3) return 6;
+  if (detail === 2) return 5;
+  return 4;
 }
 
 const _pos = new Vector3();
@@ -68,17 +81,21 @@ const _mat = new Matrix4();
 
 /**
  * Mesh a columnar graph into a BufferGeometry. Recreates the legacy colonnade
- * exactly: 6-sided (hex) CylinderGeometry per column → translate to base →
- * Euler tilt → compose → applyMatrix4 → mergeGeometries.
+ * at full detail: 6-sided (hex) CylinderGeometry per column → translate to base →
+ * Euler tilt → compose → applyMatrix4 → mergeGeometries. Lower details drop
+ * radial segments while keeping the same joint centres.
  *
  * @param {object} graph  from buildColumnarGraph
+ * @param {{ detail?: number }} [opts]
  * @returns {import('three').BufferGeometry}
  */
-export function meshColumnar(graph) {
+export function meshColumnar(graph, opts = {}) {
+  const detail = opts.detail ?? graph.detail;
+  const radial = columnarRadialSegments(detail);
   const geos = [];
   for (const col of graph.columns) {
-    // 6 radial = hexagonal. Top radius tapers slightly (r*0.85) like the legacy.
-    const colGeo = new CylinderGeometry(col.r * 0.85, col.r, col.h, 6, 1);
+    // Top radius tapers slightly (r*0.85) like the legacy.
+    const colGeo = new CylinderGeometry(col.r * 0.85, col.r, col.h, radial, 1);
     // Origin at base; recenter so the cylinder sits with base at y=0.
     colGeo.translate(0, col.h / 2, 0);
 
