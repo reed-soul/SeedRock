@@ -82,6 +82,11 @@ export function applySpeciesControls(preset, c = {}) {
       thermal: { ...preset.erosion.thermal },
       hydraulic: { ...preset.erosion.hydraulic },
       edgeWear: { ...preset.erosion.edgeWear },
+      // Domokos pass is opt-in; clone when present so set() cannot mutate the
+      // shared species registry entry.
+      ...(preset.erosion.pebbleAbrade
+        ? { pebbleAbrade: { ...preset.erosion.pebbleAbrade } }
+        : {}),
     },
   };
 

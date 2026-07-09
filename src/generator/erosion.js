@@ -214,6 +214,164 @@ export function edgeWear(positions, neighbors, count, strength = 0.08) {
 }
 
 /**
+ * Discrete mean-curvature proxy at a vertex (same family as edgeWear).
+ * Positive values mark convex / protruding regions — the only sites that
+ * abrade under Firey flow against a flat plane.
+ */
+function discreteCurvature(positions, neighbors, i) {
+  const ix = i * 3;
+  _v.set(positions[ix], positions[ix + 1], positions[ix + 2]);
+  const r = _v.length();
+  if (r < 1e-9) return 0;
+  _n.copy(_v).multiplyScalar(1 / r);
+
+  const nbrs = neighbors[i];
+  if (nbrs.length < 2) return 0;
+
+  let curvature = 0;
+  for (const j of nbrs) {
+    const jx = j * 3;
+    _a.set(positions[jx], positions[jx + 1], positions[jx + 2]);
+    const nr = _a.length();
+    if (nr < 1e-9) continue;
+    _a.multiplyScalar(1 / nr);
+    curvature += 1 - _n.dot(_a);
+  }
+  return curvature / nbrs.length;
+}
+
+/**
+ * Domokos–Firey pebble abrasion — mesh-domain approximation of curvature-
+ * driven collisional wear ([Domokos et al. 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/),
+ * Firey 1974 / Bloore 1977).
+ *
+ * Firey's law: local abrasion speed ∝ Gaussian curvature for collisions with
+ * an infinitely large abrader. On a closed rock mesh we use the discrete
+ * mean-curvature proxy (positive = protruding) and move vertices **inward
+ * along the radial from the centroid**. Two phases emerge spontaneously,
+ * matching the paper:
+ *
+ *   Phase I  — high-curvature edges/corners round; axis ratios stay roughly
+ *              constant (the "untouched faces" stage).
+ *   Phase II — once mostly convex, `sphericity` blends each vertex toward the
+ *              mean-radius sphere (the Domokos attractor for large abraders).
+ *
+ * This is the geological pass `riverCobble` was missing: hydraulic/thermal
+ * carve channels; pebble abrasion *rounds the pebble as a whole*.
+ *
+ * @param {Float32Array} positions
+ * @param {number[][]} neighbors
+ * @param {number} count
+ * @param {{ iterations?: number, rate?: number, sphericity?: number }} params
+ */
+export function pebbleAbrade(positions, neighbors, count, params = {}) {
+  const iterations = params.iterations ?? 8;
+  const rate = params.rate ?? 0.12;
+  const sphericity = Math.min(1, Math.max(0, params.sphericity ?? 0.35));
+  const deltas = new Float32Array(count * 3);
+
+  for (let iter = 0; iter < iterations; iter++) {
+    // Centroid + mean radius — the Phase II sphere attractor.
+    let cx = 0, cy = 0, cz = 0;
+    for (let i = 0; i < count; i++) {
+      const ix = i * 3;
+      cx += positions[ix];
+      cy += positions[ix + 1];
+      cz += positions[ix + 2];
+    }
+    const inv = 1 / count;
+    cx *= inv; cy *= inv; cz *= inv;
+
+    let meanR = 0;
+    for (let i = 0; i < count; i++) {
+      const ix = i * 3;
+      meanR += Math.hypot(
+        positions[ix] - cx,
+        positions[ix + 1] - cy,
+        positions[ix + 2] - cz,
+      );
+    }
+    meanR *= inv;
+    if (meanR < 1e-9) return;
+
+    deltas.fill(0);
+
+    for (let i = 0; i < count; i++) {
+      const ix = i * 3;
+      const dx = positions[ix] - cx;
+      const dy = positions[ix + 1] - cy;
+      const dz = positions[ix + 2] - cz;
+      const r = Math.hypot(dx, dy, dz);
+      if (r < 1e-9) continue;
+
+      const invR = 1 / r;
+      const nx = dx * invR;
+      const ny = dy * invR;
+      const nz = dz * invR;
+
+      // Phase I — Firey: only positive curvature abrades (protrusions hit first).
+      const kappa = discreteCurvature(positions, neighbors, i);
+      const phaseI = Math.max(0, kappa) * rate * r;
+
+      // Phase II — once rounded, the body slowly converges toward a sphere.
+      // Blend strength scales with sphericity; applied every iteration so the
+      // attractor accumulates like continuous Firey flow toward the sphere.
+      const phaseII = (r - meanR) * sphericity * 0.08;
+
+      const wear = phaseI + phaseII;
+      // Inward along radial (= toward centroid for phaseI on a star-shaped
+      // boulder; phaseII signed so r>meanR shrinks and r<meanR grows slightly).
+      deltas[ix]     -= nx * wear;
+      deltas[ix + 1] -= ny * wear;
+      deltas[ix + 2] -= nz * wear;
+    }
+
+    for (let i = 0; i < count * 3; i++) positions[i] += deltas[i];
+  }
+}
+
+/**
+ * Radial radius statistics relative to the mesh centroid — used by tests to
+ * assert Domokos Phase I/II behaviour (variance falls as the pebble rounds).
+ * @param {Float32Array} positions
+ * @param {number} count
+ * @returns {{ mean: number, variance: number, min: number, max: number }}
+ */
+export function radialStats(positions, count) {
+  let cx = 0, cy = 0, cz = 0;
+  for (let i = 0; i < count; i++) {
+    const ix = i * 3;
+    cx += positions[ix];
+    cy += positions[ix + 1];
+    cz += positions[ix + 2];
+  }
+  const inv = 1 / count;
+  cx *= inv; cy *= inv; cz *= inv;
+
+  let mean = 0;
+  const radii = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const ix = i * 3;
+    const r = Math.hypot(positions[ix] - cx, positions[ix + 1] - cy, positions[ix + 2] - cz);
+    radii[i] = r;
+    mean += r;
+  }
+  mean *= inv;
+
+  let variance = 0;
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < count; i++) {
+    const d = radii[i] - mean;
+    variance += d * d;
+    if (radii[i] < min) min = radii[i];
+    if (radii[i] > max) max = radii[i];
+  }
+  variance /= count;
+  return { mean, variance, min, max };
+}
+
+/**
  * Run the full erosion pipeline on a BufferGeometry (mutates in place).
  * @param {import('three').BufferGeometry} geo
  * @param {object} erosionParams
@@ -234,6 +392,11 @@ export function applyErosion(geo, erosionParams, rng) {
   }
   if (erosionParams.edgeWear?.enabled !== false) {
     edgeWear(pos, neighbors, count, erosionParams.edgeWear?.strength ?? 0.06);
+  }
+  // Domokos pebble abrasion — opt-in (riverCobble). Runs after the terrain-
+  // style passes so collisional rounding shapes the final silhouette.
+  if (erosionParams.pebbleAbrade?.enabled) {
+    pebbleAbrade(pos, neighbors, count, erosionParams.pebbleAbrade);
   }
 
   geo.attributes.position.needsUpdate = true;

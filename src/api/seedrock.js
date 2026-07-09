@@ -189,7 +189,7 @@ export function skeleton({ species, seed = 1, controls = {} } = {}) {
   const base = controlsFromSpecies(sp);
   const merged = mergeControls(base, { ...controls, seed });
   const shaped = applySpeciesControls(sp, merged);
-  // Build WITHOUT erosion by disabling all three passes — still gets the form +
+  // Build WITHOUT erosion by disabling all passes — still gets the form +
   // displacement. Cheaper than full generate() when you just want form/size.
   const noErosion = {
     ...shaped,
@@ -197,6 +197,7 @@ export function skeleton({ species, seed = 1, controls = {} } = {}) {
       thermal: { enabled: false },
       hydraulic: { enabled: false },
       edgeWear: { enabled: false },
+      pebbleAbrade: { enabled: false },
     },
   };
   const geo = generateRockGeometry(noErosion, seed, { style: shaped.style ?? 'pbr' });
