@@ -1,4 +1,6 @@
 // River cobble — water-worn rounded stones, smooth low-profile silhouette.
+// Silhouette rounding is driven by Domokos–Firey pebble abrasion
+// (docs/generation-design.md §3.4), not just noise amplitude.
 
 export const riverCobble = {
   id: 'riverCobble',
@@ -32,9 +34,20 @@ export const riverCobble = {
     ridged: false,
   },
   erosion: {
-    thermal: { enabled: true, iterations: 18, talus: 0.025, rate: 0.45 },
-    hydraulic: { enabled: true, droplets: 160, steps: 32, erosion: 0.35, deposit: 0.18 },
-    edgeWear: { enabled: true, strength: 0.03 },
+    // Lighter terrain-style passes — cobbles round by collision, not by
+    // hillslope diffusion. Hydraulic still adds subtle fluvial texture.
+    thermal: { enabled: true, iterations: 10, talus: 0.03, rate: 0.3 },
+    hydraulic: { enabled: true, droplets: 80, steps: 24, erosion: 0.18, deposit: 0.1 },
+    // edgeWear is redundant once pebbleAbrade runs (both are curvature-
+    // driven); keep it off so Domokos owns the rounding story.
+    edgeWear: { enabled: false },
+    // Domokos–Firey collisional abrasion — the species' defining pass.
+    pebbleAbrade: {
+      enabled: true,
+      iterations: 10,
+      rate: 0.14,        // Phase I: curvature-driven edge rounding
+      sphericity: 0.45,  // Phase II: blend toward the sphere attractor
+    },
   },
   lod: {
     full: { detail: 4 },
@@ -44,12 +57,18 @@ export const riverCobble = {
 
   controls: [
     {
-      key: 'roundness', name: 'Roundness', group: 'shape',
+      key: 'roundness', name: 'Roundness', group: 'erosion',
       min: 0, max: 1, step: 0.05,
-      // the Domokos–Gibbons target: how spherical the cobble has become. Low
-      // amplitude + low micro = well-rounded (see docs/generation-design.md §4).
-      get: (s) => 1 - Math.min(1, (s.noise.amplitude ?? 0.16) / 0.3),
-      set: (s, v) => { s.noise.amplitude = (1 - v) * 0.3; },
+      // Domokos Phase II — how far the cobble has converged toward a sphere.
+      get: (s) => s.erosion.pebbleAbrade?.sphericity ?? 0.45,
+      set: (s, v) => { s.erosion.pebbleAbrade.sphericity = v; },
+    },
+    {
+      key: 'abrasion', name: 'Abrasion', group: 'erosion',
+      min: 0, max: 1, step: 0.01,
+      // Domokos Phase I rate — how aggressively high-curvature edges chip.
+      get: (s) => Math.min(1, (s.erosion.pebbleAbrade?.rate ?? 0.14) / 0.3),
+      set: (s, v) => { s.erosion.pebbleAbrade.rate = v * 0.3; },
     },
     {
       key: 'surfacePolish', name: 'Surface polish', group: 'surface',
@@ -61,9 +80,9 @@ export const riverCobble = {
     {
       key: 'fluvialWear', name: 'Fluvial wear', group: 'erosion',
       min: 0, max: 1, step: 0.01,
-      // strongest hydraulic erosion in the set — cobbles live in water.
-      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.35) / 0.5),
-      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.5; },
+      // residual hydraulic carving — secondary to collisional abrasion.
+      get: (s) => Math.min(1, (s.erosion.hydraulic?.erosion ?? 0.18) / 0.4),
+      set: (s, v) => { s.erosion.hydraulic.erosion = v * 0.4; },
     },
   ],
 };

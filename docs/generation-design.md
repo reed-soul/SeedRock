@@ -25,9 +25,9 @@ compromise rather than a faithful model — same convention as SeedThree's
   ([Culling 1960](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/JZ065i004p01561)),
   particle hydraulic erosion ([Musgrave 1989](http://www.kenmusgrave.com/dissertation.pdf);
   [Mei et al. 2007](https://inria.hal.science/inria-00402079/PDF/FastErosion_PG07.pdf)),
-  and — as a *target, not yet a model* — Domokos–Gibbons pebble abrasion
-  ([Domokos & Gibbons 2013](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/))
-  for the `river_cobble` species.
+  and Domokos–Firey pebble abrasion
+  ([Domokos et al. 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/))
+  for the `riverCobble` species (`erosion.pebbleAbrade`).
 
 ---
 
@@ -126,6 +126,27 @@ discrete mean-curvature proxy. This rounds chips and sharpens weathered edges; i
 is a generic mesh-processing operation rather than a named geomorphic process,
 but it captures the **mechanical weathering** that rounds exposed corners faster
 than flat faces.
+
+#### 3.4 Pebble abrasion → Domokos–Firey curvature flow
+
+`riverCobble` adds a fourth pass: **collisional pebble abrasion**. River rocks
+do not primarily round by hillslope diffusion or droplet carving — they round by
+repeated impacts. [Domokos et al. 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/)
+[15] (building on Firey 1974 / Bloore 1977) showed that abrasion against a large
+abrader is a **curvature-driven flow**: local wear speed ∝ Gaussian curvature,
+and two phases emerge spontaneously —
+
+1. **Phase I** — high-curvature edges/corners abrade; axis ratios stay roughly
+   constant (the "untouched faces" stage Kuenen observed).
+2. **Phase II** — once the body is convex, axis ratios evolve toward a sphere
+   (the Firey attractor for infinitely large abraders).
+
+`pebbleAbrade()` in [`erosion.js`](../src/generator/erosion.js) is the mesh-
+domain approximation: positive discrete curvature wears inward along the radial
+from the centroid (Phase I), then a `sphericity` blend pulls radii toward the
+mean-radius sphere (Phase II). It is **opt-in** via
+`erosion.pebbleAbrade.enabled` — only `riverCobble` turns it on, so other
+species keep their prior silhouettes.
 
 ### 4. Form primitives — geology, not just geometry
 
@@ -236,13 +257,12 @@ is *special*. Phase 5 is essentially about making that asymmetry go away.
 1. Weld vertices (`mergeVertices`) so adjacency is meaningful.
 2. `buildAdjacency()` ([erosion.js:14](../src/generator/erosion.js)) — per-vertex
    neighbor lists from the triangle index.
-3. Run, in order, gated by `enabled !== false`:
-   - `thermalErode` ([erosion.js:49](../src/generator/erosion.js)) — talus-angle
-     diffusion, **Y-axis only** (see honest limitation in §3.1).
-   - `hydraulicErode` ([erosion.js:86](../src/generator/erosion.js)) — droplet
-     particle sim with inertia & evaporation.
-   - `edgeWear` ([erosion.js:163](../src/generator/erosion.js)) — curvature-driven
-     inward push along the radial normal.
+3. Run, in order, gated by `enabled !== false` (pebbleAbrade is opt-in):
+   - `thermalErode` ([erosion.js](../src/generator/erosion.js)) — talus-angle
+     diffusion along the true 3D gradient.
+   - `hydraulicErode` — droplet particle sim with inertia & evaporation.
+   - `edgeWear` — curvature-driven inward push along the radial normal.
+   - `pebbleAbrade` — Domokos–Firey collisional rounding (riverCobble only).
 4. Recompute normals.
 
 ### B.4 Forms — `src/generator/forms/`
@@ -301,8 +321,8 @@ The geological references behind each form's structure: columnar jointing physic
 [8][9], foliation fabrics ([ETH Zurich structural geology notes](https://www.files.ethz.ch/structuralgeology/jpb/files/english/9foliation.pdf)
 [12]; [PSGT9](https://psgt.earth.lsa.umich.edu/chapter/9/fabrics.html) [13]),
 crystal habit ([OpenGeology Mineralogy](https://opengeology.org/Mineralogy/14-mineral-descriptions/) [14]),
-and — aspirational, for `river_cobble` — Domokos–Gibbons pebble abrasion
-([Domokos & Gibbons 2013](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/) [15]).
+and Domokos–Firey pebble abrasion for `riverCobble`
+([Domokos et al. 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/) [15]).
 
 ---
 
@@ -324,7 +344,7 @@ All URLs verified July 2026.
 12. **Burg, J.-P.** *Secondary Planar Structural Elements* (foliation chapter), ETH Zurich structural geology course. [PDF](https://www.files.ethz.ch/structuralgeology/jpb/files/english/9foliation.pdf). *(Foliation/bedding reference for the `slate` form.)*
 13. **PSGT9: Fabrics.** *Processes in Structural Geology and Tectonics*, University of Michigan. [web](https://psgt.earth.lsa.umich.edu/chapter/9/fabrics.html). *(The slate→phyllite→schist→gneiss metamorphic-grade sequence.)*
 14. **Perkins, D. & Henke, K.** *Mineral Descriptions*, OpenGeology Mineralogy. [web](https://opengeology.org/Mineralogy/14-mineral-descriptions/). *(Crystal habits — radiating cluster, acicular, prismatic — behind the `crystal` form.)*
-15. **Domokos, G. & Gibbons, G. W. (2013).** *Geometrical and physical models of abrasion.* Discussed in Szabó et al., *How River Rocks Round: Resolving the Shape-Size Paradox*, PLoS ONE. [PMC3922984](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/). *(Aspirational target for `river_cobble` — the "box equations" of pebble shape evolution.)*
+15. **Domokos, G., Jerolmack, D. J., Sipos, A. Á. & Török, A. (2014).** *How River Rocks Round: Resolving the Shape-Size Paradox.* PLoS ONE 9(2): e88657. [PMC3922984](https://pmc.ncbi.nlm.nih.gov/articles/PMC3922984/). *(Curvature-driven two-phase abrasion — the model behind `pebbleAbrade` for `riverCobble`.)*
 16. **Sobel, I. & Feldman, G. (1968).** *A 3×3 Isotropic Gradient Operator for Image Processing.* Unpublished talk, Stanford Artificial Intelligence Laboratory (SAIL); documented only via secondary sources (e.g. [Wikipedia: Sobel operator](https://en.wikipedia.org/wiki/Sobel_operator)). *(Used in the texture pipeline's Sobel normal derivation, `scripts/texture/derive-pbr.mjs`. Cited as unpublished because it is.)*
 
 ### Companion open-source projects (for reference, not code derivation)
