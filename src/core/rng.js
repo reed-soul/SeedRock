@@ -21,6 +21,19 @@ export class Rng {
     this._state = xmur3(seedStr)() >>> 0;
   }
 
+  /**
+   * Fork an RNG that continues from this instance's current internal state.
+   * Used so LOD levels can share one StructureGraph build, then each run
+   * erosion from the same post-graph draw position without advancing the
+   * parent stream.
+   * @returns {Rng}
+   */
+  clone() {
+    const fork = Object.create(Rng.prototype);
+    fork._state = this._state;
+    return fork;
+  }
+
   next() {
     let z = (this._state = (this._state + 0x9e3779b9) | 0);
     z ^= z >>> 16; z = Math.imul(z, 0x21f0aaad);

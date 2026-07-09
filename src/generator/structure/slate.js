@@ -1,7 +1,10 @@
 // Slate StructureGraph — foliated plate as a layer-stack topology.
 // Migrated byte-for-byte from forms/slate.js: buildSlateGraph captures the per-
 // layer parameters (the rng draw sequence), meshSlate recreates the BoxGeometry
-// stack from them. Same rng order, same merge order → identical vertex output.
+// stack from them. Same rng order, same merge order → identical vertex output
+// at the build-time detail.
+//
+// LOD: slab footprints stay fixed; per-slab segment counts scale with detail.
 
 import { BoxGeometry, Vector3, Matrix4 } from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -12,7 +15,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
  *
  * @param {object} shape
  * @param {import('../../core/rng.js').Rng} rng
- * @returns {{ slabs: Array<{ w: number, d: number, thick: number, segW: number, segD: number, ox: number, oz: number, oy: number }>, baseRadius: number }}
+ * @returns {{ slabs: Array<{ w: number, d: number, thick: number, segW: number, segD: number, ox: number, oz: number, oy: number }>, baseRadius: number, detail: number }}
  */
 export function buildSlateGraph(shape, rng) {
   const radius = shape.radius ?? 1;
@@ -37,23 +40,38 @@ export function buildSlateGraph(shape, rng) {
     const oy = i * slabThick * 0.95;
     slabs.push({ w, d, thick: slabThick, segW, segD, ox, oz, oy });
   }
-  return { slabs, baseRadius: radius };
+  return { slabs, baseRadius: radius, detail: shape.detail ?? 4 };
+}
+
+/**
+ * Scale a stored slab segment count for a target LOD detail.
+ * At graph.detail the factor is 1 → byte-identical to the legacy mesh.
+ */
+export function slateSegmentsForDetail(storedSeg, detail, graphDetail) {
+  const factor = Math.max(1, detail) / Math.max(1, graphDetail);
+  return Math.max(1, Math.round(storedSeg * factor));
 }
 
 const _pos = new Vector3();
 const _mat = new Matrix4();
 
 /**
- * Mesh a slate graph into a BufferGeometry. Recreates the legacy stack exactly:
- * BoxGeometry per slab → translate → mergeGeometries → re-center on XZ.
+ * Mesh a slate graph into a BufferGeometry. Recreates the legacy stack exactly
+ * at full detail: BoxGeometry per slab → translate → mergeGeometries →
+ * re-center on XZ. Lower details reduce per-slab segments.
  *
  * @param {object} graph  from buildSlateGraph
+ * @param {{ detail?: number }} [opts]
  * @returns {import('three').BufferGeometry}
  */
-export function meshSlate(graph) {
+export function meshSlate(graph, opts = {}) {
+  const detail = opts.detail ?? graph.detail;
+  const graphDetail = graph.detail ?? 4;
   const geos = [];
   for (const s of graph.slabs) {
-    const slab = new BoxGeometry(s.w, s.thick, s.d, s.segW, 1, s.segD);
+    const segW = slateSegmentsForDetail(s.segW, detail, graphDetail);
+    const segD = slateSegmentsForDetail(s.segD, detail, graphDetail);
+    const slab = new BoxGeometry(s.w, s.thick, s.d, segW, 1, segD);
     _pos.set(s.ox, s.oy, s.oz);
     _mat.makeTranslation(_pos.x, _pos.y, _pos.z);
     slab.applyMatrix4(_mat);
