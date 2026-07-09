@@ -61,7 +61,11 @@ function buildForm(caseSpec) {
   }
   if (caseSpec.form === 'columnar') return buildColumnar(preset.shape, noise, rng).geo;
   if (caseSpec.form === 'slate')    return buildSlate(preset.shape, rng).geo;
-  if (caseSpec.form === 'crystal')  return buildCrystal(preset.shape, rng).geo;
+  if (caseSpec.form === 'crystal') {
+    // Golden baseline is the legacy angular fan. Crystal species now default
+    // to Worley nucleation — force fan here so re-capture stays comparable.
+    return buildCrystal({ ...preset.shape, nucleation: 'fan' }, rng).geo;
+  }
   throw new Error(`unknown form ${caseSpec.form}`);
 }
 

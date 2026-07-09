@@ -26,6 +26,11 @@ export const ice = {
   },
   shape: {
     form: 'crystal',
+    // Same Worley nucleation as crystal — icicles seed irregularly on a
+    // substrate rather than on a clock-face fan.
+    nucleation: 'worley',
+    nucleationDensity: 0.45,
+    habit: 'radiating',
     radius: 1,
     detail: 4,
     squash: 1,
@@ -59,6 +64,12 @@ export const ice = {
       min: 0, max: 1, step: 0.05,
       get: (s) => Math.min(1, (s.shape.radius - 0.6) / 1.4),
       set: (s, v) => { s.shape.radius = 0.6 + v * 1.4; },
+    },
+    {
+      key: 'nucleationDensity', name: 'Nucleation density', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      get: (s) => s.shape.nucleationDensity ?? 0.45,
+      set: (s, v) => { s.shape.nucleationDensity = v; },
     },
     {
       key: 'clarity', name: 'Clarity', group: 'surface',
