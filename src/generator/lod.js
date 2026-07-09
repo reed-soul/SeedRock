@@ -1,13 +1,17 @@
 import { LOD, Mesh } from 'three/webgpu';
-import { generateRockGeometry } from './mesh.js';
+import { buildRockStructure, meshRockFromStructure } from './mesh.js';
 import { bakeRockImpostor } from '../core/impostor.js';
 
 const LOD_NAMES = ['LOD0', 'LOD1', 'LOD2', 'LOD3'];
 
-function meshLevel(preset, seed, material, detailKey, distance, lodIndex, style) {
+/**
+ * Mesh one LOD level from a shared StructureGraph.
+ * Topology is built once; only the mesher detail (and a fresh erosion-rng fork)
+ * changes per level — the SeedThree stems[] pattern for rocks.
+ */
+function meshLevel(graph, preset, erosionRng, material, detailKey, distance, lodIndex, style) {
   const detail = preset.lod?.[detailKey]?.detail ?? preset.shape.detail;
-  const levelPreset = { ...preset, shape: { ...preset.shape, detail } };
-  const geometry = generateRockGeometry(levelPreset, seed, { style });
+  const geometry = meshRockFromStructure(graph, preset, erosionRng, { detail, style });
   const mesh = new Mesh(geometry, material);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -19,19 +23,22 @@ function meshLevel(preset, seed, material, detailKey, distance, lodIndex, style)
 
 /**
  * Build a THREE.LOD rock with full / reduced / (mesh or billboard) levels.
+ * StructureGraph is built once and remeshed per LOD detail.
  */
 export function buildRockLOD(preset, seed, material, opts = {}) {
   const { style } = opts;
+  const { graph, erosionRng } = buildRockStructure(preset, seed);
   const lod = new LOD();
   lod.name = `rock_${preset.id}_${seed}`;
+  lod.userData.structureGraph = graph;
 
-  const full = meshLevel(preset, seed, material, 'full', 0, 0, style);
-  const reduced = meshLevel(preset, seed, material, 'reduced', 10, 1, style);
+  const full = meshLevel(graph, preset, erosionRng, material, 'full', 0, 0, style);
+  const reduced = meshLevel(graph, preset, erosionRng, material, 'reduced', 10, 1, style);
   lod.addLevel(full.mesh, full.distance);
   lod.addLevel(reduced.mesh, reduced.distance);
 
   if (!opts.bakeBillboard) {
-    const imp = meshLevel(preset, seed, material, 'impostor', 20, 2, style);
+    const imp = meshLevel(graph, preset, erosionRng, material, 'impostor', 20, 2, style);
     lod.addLevel(imp.mesh, imp.distance);
   }
 
@@ -45,7 +52,7 @@ export function buildRockLOD(preset, seed, material, opts = {}) {
  * @param {import('../core/bake-service.js').BakeService} [bakeService]
  */
 export async function buildRockLODAsync(renderer, preset, seed, material, opts = {}) {
-  const lod = buildRockLOD(preset, seed, material, { bakeBillboard: true });
+  const lod = buildRockLOD(preset, seed, material, { ...opts, bakeBillboard: true });
   const source = lod.userData.reducedMesh;
 
   const bakeSource = new Mesh(source.geometry.clone(), material);

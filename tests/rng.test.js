@@ -32,4 +32,16 @@ describe('Rng', () => {
       assert.ok(v >= 3 && v <= 7);
     }
   });
+
+  it('clone forks from the current state without advancing the parent', () => {
+    const parent = new Rng('clone-test');
+    parent.next();
+    parent.next();
+    const fork = parent.clone();
+    const parentNext = parent.next();
+    const forkNext = fork.next();
+    assert.equal(parentNext, forkNext);
+    // Further draws stay in lockstep when both advance once more from the fork point.
+    assert.equal(parent.next(), fork.next());
+  });
 });
