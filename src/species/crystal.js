@@ -17,6 +17,12 @@ export const crystal = {
   },
   shape: {
     form: 'crystal',
+    // Worley 1996 cellular feature points seed satellite nucleation sites
+    // (docs/generation-design.md §4). Default for new crystal species; the
+    // legacy angular fan remains available via nucleation: 'fan'.
+    nucleation: 'worley',
+    nucleationDensity: 0.55,
+    habit: 'radiating',
     radius: 1,
     detail: 4,
     squash: 1,
@@ -48,10 +54,17 @@ export const crystal = {
     {
       key: 'clusterDensity', name: 'Cluster density', group: 'shape',
       min: 0, max: 1, step: 0.05,
-      // crystal.js spawns 5–9 satellites from rng; radius drives the cluster
-      // footprint. Bigger radius = wider, denser-looking cluster.
+      // Footprint of the cluster — bigger radius = wider Worley disk.
       get: (s) => Math.min(1, (s.shape.radius - 0.6) / 1.4),
       set: (s, v) => { s.shape.radius = 0.6 + v * 1.4; },
+    },
+    {
+      key: 'nucleationDensity', name: 'Nucleation density', group: 'shape',
+      min: 0, max: 1, step: 0.05,
+      // Worley lattice fineness — denser cells → more candidate sites →
+      // tighter satellite packing after thinning.
+      get: (s) => s.shape.nucleationDensity ?? 0.55,
+      set: (s, v) => { s.shape.nucleationDensity = v; },
     },
     {
       key: 'facetCrispness', name: 'Facet crispness', group: 'surface',
