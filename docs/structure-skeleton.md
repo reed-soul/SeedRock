@@ -206,27 +206,32 @@ layer-count and per-layer shrink move into the graph builder; the mesher is dumb
 ### `CrystalGraph` — nucleation pattern
 
 The structure is the **nucleation pattern**: where each crystal seeded and what
-habit it grew. Today this is the central cone + satellite fan in `buildCrystal`.
-[Worley 1996](https://dl.acm.org/doi/10.1145/237170.237267) cellular noise is the
-natural way to seed the nucleation points (candidate for the graph builder).
+habit it grew. Two builders share the same `shards[]` schema and mesher:
+
+| `shape.nucleation` | Placement | Notes |
+|---|---|---|
+| `'fan'` (default if unset) | Uniform angular ring + jitter | Legacy path; golden-baseline gate |
+| `'worley'` | [Worley 1996](https://dl.acm.org/doi/10.1145/237170.237267) cellular feature points in a disk, thinned for spacing | Default for `crystal` / `ice` species |
 
 ```ts
 interface CrystalGraph {
   shards: Array<{
-    base: [number, number, number];     // nucleation point
-    direction: [number, number, number]; // growth axis (unit)
-    length: number;
-    radius: number;
-    facets: number;                      // 4 = shard, 6 = hex prism habit
+    base: [number, number, number];     // nucleation point (stored as `pos`)
+    direction: [number, number, number]; // growth axis (unit, stored as `dir`)
+    length: number;                      // stored as `h`
+    radius: number;                      // stored as `r`
+    facets: number;                      // stored as `sides` — 4 = shard, 6 = hex
   }>;
-  habit: 'radiating' | 'drusy' | 'geode';  // drives shard placement
+  habit: 'radiating' | 'drusy' | 'geode';
+  nucleation: 'fan' | 'worley';
 }
 ```
 
-**Migration** ([crystal.js](../src/generator/forms/crystal.js)): `buildCrystal`
-returns a `CrystalGraph`; the mesher creates `ConeGeometry` per shard. The central
-+ satellite pattern moves into the graph builder. A future Worley-seeded
-nucleation layer would slot into the builder without touching the mesher.
+**Worley path** ([worley.js](../src/core/worley.js) + [crystal.js](../src/generator/structure/crystal.js)):
+`shape.nucleationDensity` controls lattice fineness. Feature points are collected
+in a disk, nearest-first, then Poisson-thinned so satellites keep a minimum
+separation. Growth axes radiate from the cluster origin through each site.
+The mesher is unchanged — it only reads `shards[]`.
 
 ## How the mesher consumes it
 
@@ -305,7 +310,6 @@ seed for these tests.
 
 - Growing columnar joints from a cracking front (Goehring) — aspirational, not in
   the initial schema.
-- Worley-seeded crystal nucleation — candidate, not in the initial schema.
 - Generalizing `thermalErode` from Y-axis-only to true 3D gradient transport
   (see [`generation-design.md` §3.1](generation-design.md#31-thermal-erosion--hillslope-diffusion)
   honest limitation) — orthogonal to this design; would happen in `erosion.js`.
