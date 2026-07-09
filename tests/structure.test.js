@@ -18,8 +18,13 @@ function loadBaseline(form) {
 
 // Build the meshed geometry via the NEW graph path, mirroring mesh.js's call
 // order exactly: rng from (species:seed), then noise seeded from rng.int().
+// Crystal golden was captured with the legacy angular fan; force nucleation
+// to 'fan' so the Worley upgrade does not invalidate the byte gate.
 function buildViaGraph(speciesKey, seed) {
-  const preset = SPECIES[speciesKey];
+  const base = SPECIES[speciesKey];
+  const preset = speciesKey === 'crystal'
+    ? { ...base, shape: { ...base.shape, nucleation: 'fan' } }
+    : base;
   const rng = new Rng(`${preset.id}:${seed}`);
   const noise = makeNoise3D(rng.int(1, 1_000_000));
   const graph = buildStructureGraph(preset, rng, noise);
