@@ -116,6 +116,26 @@ Include in the PR body:
 
 Use the PR checklist in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
+## Wanted species
+
+Good first contributions — one species per PR, follow the steps above. Prefer
+forms that already exist (`boulder` / `columnar` / `slate` / `crystal`) unless
+you're also proposing a new StructureGraph form.
+
+| Species | Suggested form | Why it's interesting |
+|---------|----------------|----------------------|
+| **Gneiss** | `slate` or `boulder` | Banded metamorphic — foliation + coarse grain |
+| **Pumice** | `boulder` | Vesicular volcanic — high porosity, very light look |
+| **Conglomerate** | `boulder` | Clast-in-matrix — needs a distinct albedo story |
+| **Chalk** | `boulder` | Soft carbonate — high hydraulic, pale albedo |
+| **Amethyst** | `crystal` | Purple quartz habit — reuses Worley nucleation |
+| **Travertine** | `slate` | Layered spring deposit — horizontal banding |
+| **Breccia** | `boulder` | Angular clasts — ridged noise + high edge wear |
+| **Peridotite** | `boulder` | Mantle rock — green olivine albedo |
+
+Claim one by opening a draft PR titled `species: add <Name> (community contribution)`.
+See [PR #14 Schist](https://github.com/reed-soul/SeedRock/pull/14) for a complete example.
+
 ## Naming conventions
 
 | Item | Convention | Example |
