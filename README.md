@@ -74,12 +74,13 @@ The live viewer opens to a **curated Karst canyon** — cliff face, scattered bo
 
 ## What's next
 
-- Community-submitted species presets ([CONTRIBUTING.md](CONTRIBUTING.md) · [docs/COMMUNITY_SPECIES.md](docs/COMMUNITY_SPECIES.md))
+- **Launch week** — post the demo ([promo/COPY.md](promo/COPY.md) has ready-to-paste copy + media). Checklist in [promo/README.md](promo/README.md).
+- **Community species** — pick from the [wanted list](docs/COMMUNITY_SPECIES.md#wanted-species) and open a PR ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Requirements
 
 - **Node.js** 18+
-- A **WebGPU-capable browser** (Chrome 113+ / Edge). WebGL2 fallback will be included.
+- A **WebGPU-capable browser** (Chrome 113+ / Edge). Falls back to WebGL2 automatically.
 
 ## Run it
 
@@ -179,6 +180,9 @@ Following the same cross-agent collaboration model as [SeedThree](https://github
 - [x] Ice with transmission material (MeshPhysicalNodeMaterial, ior 1.31)
 - [x] Auto collider proxy in GLB export (`*_collider` for engine physics import)
 - [x] Community contribution docs + CI tests
+- [x] StructureGraph LOD reuse (one topology, remesh per detail)
+- [x] Worley cellular nucleation for crystal / ice
+- [x] Domokos–Firey pebble abrasion for river cobble
 
 ## License
 
