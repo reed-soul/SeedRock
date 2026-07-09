@@ -2,6 +2,9 @@
 // Migrated byte-for-byte from forms/crystal.js: buildCrystalGraph captures the
 // shard parameters (the rng draw sequence), meshCrystal recreates the ConeGeometry
 // cluster from them. Same rng order, same merge order → identical vertex output.
+//
+// LOD: nucleation pattern stays fixed; radial sides scale with detail
+// (habit preserved at detail ≥ 3, then softens — same pattern as columnar).
 
 import { ConeGeometry, Vector3, Matrix4, Quaternion } from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -14,7 +17,7 @@ const _up = new Vector3(0, 1, 0);
  *
  * @param {object} shape
  * @param {import('../../core/rng.js').Rng} rng
- * @returns {{ shards: Array<{ h: number, r: number, sides: number, dir: [number,number,number], pos: [number,number,number] }>, baseRadius: number }}
+ * @returns {{ shards: Array<{ h: number, r: number, sides: number, dir: [number,number,number], pos: [number,number,number] }>, baseRadius: number, detail: number }}
  */
 export function buildCrystalGraph(shape, rng) {
   const radius = shape.radius ?? 1;
@@ -50,7 +53,20 @@ export function buildCrystalGraph(shape, rng) {
     const pos = [Math.cos(a) * placeR, 0, Math.sin(a) * placeR];
     shards.push({ h, r, sides, dir, pos, isCenter: false });
   }
-  return { shards, baseRadius: radius };
+  return { shards, baseRadius: radius, detail: shape.detail ?? 4 };
+}
+
+/**
+ * Radial sides for a crystal shard at a given LOD detail.
+ * At detail ≥ 3 the geological habit (`storedSides`, 4 or 6) is preserved —
+ * that is the byte-identical full mesh. Lower LODs drop sides the same way
+ * columnar drops radial segments: silhouette softens at distance, topology
+ * (shard count / placement) stays fixed.
+ */
+export function crystalRadialSides(storedSides, detail) {
+  if (detail >= 3) return storedSides;
+  if (detail === 2) return Math.max(4, storedSides - 2); // 6→4, 4→4
+  return 3;
 }
 
 const _dir = new Vector3();
@@ -60,16 +76,20 @@ const _mat = new Matrix4();
 
 /**
  * Mesh a crystal graph into a BufferGeometry. Recreates the legacy cluster
- * exactly: ConeGeometry per shard → translate → (rotate for satellites) →
- * compose → mergeGeometries.
+ * at full detail: ConeGeometry per shard → translate → (rotate for satellites)
+ * → compose → mergeGeometries. Lower details reduce radial sides while keeping
+ * the same nucleation pattern.
  *
  * @param {object} graph  from buildCrystalGraph
+ * @param {{ detail?: number }} [opts]
  * @returns {import('three').BufferGeometry}
  */
-export function meshCrystal(graph) {
+export function meshCrystal(graph, opts = {}) {
+  const detail = opts.detail ?? graph.detail;
   const geos = [];
   for (const s of graph.shards) {
-    const cone = new ConeGeometry(s.r, s.h, s.sides, 1);
+    const sides = crystalRadialSides(s.sides, detail);
+    const cone = new ConeGeometry(s.r, s.h, sides, 1);
     cone.translate(0, s.h / 2, 0);
 
     if (s.isCenter) {

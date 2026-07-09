@@ -5,41 +5,41 @@
 
 import { IcosahedronGeometry, Vector3 } from 'three/webgpu';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { buildBoulderGraph, meshBoulder } from '../structure/boulder.js';
+import { buildBoulderGraph, displaceVertex } from '../structure/boulder.js';
 
 const _v = new Vector3();
+const _fieldOrigin = new Vector3();
 
 /**
- * Build the boulder base icosahedron + capture displacement nodes.
+ * Build the boulder base icosahedron + capture the displacement field.
  * Returns { geo, origin } where geo's positions are NOT yet displaced —
  * call displaceRadial() (below) to apply them, exactly as mesh.js used to.
  */
 export function buildBoulder(shape, noiseParams, noise, rng) {
-  // The graph builder computes origin AND the displaced positions together.
-  // To preserve the old two-step contract (buildBoulder then displaceRadial),
-  // build the graph but return the BASE icosahedron geometry here; the displaced
-  // nodes are stashed on the geometry so displaceRadial can apply them without
-  // re-sampling noise.
   const graph = buildBoulderGraph(shape, noiseParams, noise, rng);
-  // Reconstruct origin from the graph: the legacy origin was used inside the
-  // builder. We don't expose it from the graph, but displaceRadial only needs
-  // the displaced positions, which are already in graph.nodes. Stash them.
-  const base = graph.baseGeo;
+  const base = mergeVertices(new IcosahedronGeometry(shape.radius, shape.detail));
   base.userData = base.userData || {};
-  base.userData.__displacedNodes = graph.nodes;
-  // origin is no longer needed downstream (displaceRadial writes the precomputed
-  // positions), but the API contract returns one — pass a zero vector.
-  return { geo: base, origin: new Vector3(0, 0, 0) };
+  base.userData.__boulderGraph = graph;
+  return {
+    geo: base,
+    origin: new Vector3(graph.origin[0], graph.origin[1], graph.origin[2]),
+  };
 }
 
 /**
- * Apply the precomputed displacement nodes to the geometry's positions.
- * In the legacy implementation this re-sampled noise; now it writes the values
- * the graph builder already computed (identical result, no duplicate work).
+ * Apply the displacement field to the geometry's positions.
+ * Mirrors the legacy displaceRadial noise sampling via the shared field formula.
  */
 export function displaceRadial(geo, _origin, _p, _noise, _stretch, _squash) {
-  const nodes = geo.userData?.__displacedNodes;
-  if (!nodes) return; // no graph built — nothing to apply
-  geo.attributes.position.array.set(nodes);
-  geo.attributes.position.needsUpdate = true;
+  const graph = geo.userData?.__boulderGraph;
+  if (!graph) return;
+  const pos = geo.attributes.position;
+  const { field, noise, stretch, squash } = graph;
+  _fieldOrigin.set(graph.origin[0], graph.origin[1], graph.origin[2]);
+  for (let i = 0; i < pos.count; i++) {
+    _v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+    displaceVertex(_v, field, noise, stretch, squash, _fieldOrigin);
+    pos.setXYZ(i, _v.x, _v.y, _v.z);
+  }
+  pos.needsUpdate = true;
 }

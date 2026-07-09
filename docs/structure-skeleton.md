@@ -1,10 +1,11 @@
 # Structure Skeleton — Implemented
 
-> **Status: implemented.** The four form factories (`boulder`, `columnar`,
-> `slate`, `crystal`) now produce a `StructureGraph` before meshing. This was
-> the Phase 5 roadmap entry from [`generation-design.md`](generation-design.md) §
-> "Future: structure skeleton", rolled out across four refactor commits and
-> gated by byte-for-byte regression tests.
+> **Status: implemented + LOD reuse.** The four form factories (`boulder`,
+> `columnar`, `slate`, `crystal`) produce a `StructureGraph` before meshing.
+> `buildRockLOD` builds the graph **once** and remeshes it at each LOD detail
+> (`meshRockFromStructure`) — the SeedThree `stems[]` pattern. Gated by
+> byte-for-byte regression tests at full detail plus
+> [`tests/lod-reuse.test.js`](../tests/lod-reuse.test.js).
 >
 > References here re-use citations already verified in `generation-design.md`
 > (Weber–Penn, Goehring, Culling, Worley, Domokos–Gibbons) — see that file's
@@ -14,15 +15,16 @@
 
 | Form | Graph schema | Implementation |
 |---|---|---|
-| **boulder** | displacement-node graph — each icosahedron vertex's final displaced position precomputed | [`src/generator/structure/boulder.js`](../src/generator/structure/boulder.js) |
-| **columnar** | joint set — hex close-pack column topology (centre, height, radius, tilt) | [`src/generator/structure/columnar.js`](../src/generator/structure/columnar.js) |
-| **slate** | foliation planes — stack of slab footprints | [`src/generator/structure/slate.js`](../src/generator/structure/slate.js) |
-| **crystal** | nucleation pattern — central + satellite shards | [`src/generator/structure/crystal.js`](../src/generator/structure/crystal.js) |
+| **boulder** | displacement **field** — origin + stretch/squash + noise params; mesher samples at any icosahedron detail | [`src/generator/structure/boulder.js`](../src/generator/structure/boulder.js) |
+| **columnar** | joint set — hex close-pack column topology (centre, height, radius, tilt); radial segments scale with detail | [`src/generator/structure/columnar.js`](../src/generator/structure/columnar.js) |
+| **slate** | foliation planes — stack of slab footprints; box segments scale with detail | [`src/generator/structure/slate.js`](../src/generator/structure/slate.js) |
+| **crystal** | nucleation pattern — central + satellite shards; radial sides scale with detail | [`src/generator/structure/crystal.js`](../src/generator/structure/crystal.js) |
 
 Dispatch: [`src/generator/structure/graph.js`](../src/generator/structure/graph.js)
-(`buildStructureGraph` / `meshStructureGraph`). `mesh.js`'s `generateRockGeometry`
-routes through it; its signature and behavior are unchanged, so `lod.js`,
-`paint.js`, `scatter.js`, `main.js`, and `api/seedrock.js` needed zero edits.
+(`buildStructureGraph` / `meshStructureGraph`). [`mesh.js`](../src/generator/mesh.js)
+exposes `buildRockStructure` + `meshRockFromStructure` so
+[`lod.js`](../src/generator/lod.js) remeshes one graph at full / reduced /
+impostor detail. `generateRockGeometry` keeps its public signature.
 
 ## Regression gate
 
@@ -115,12 +117,12 @@ interface StructureGraph {
 }
 ```
 
-### `BoulderGraph` — displacement nodes
+### `BoulderGraph` — displacement field
 
-The boulder's "structure" is its **displacement field**: a set of noise feature
-points that the radial displacer samples. Today this is implicit (the noise
-function itself). The graph makes it explicit so the same field can be sampled at
-any mesh resolution.
+The boulder's "structure" is its **displacement field**: origin, stretch/squash,
+and the noise parameters the radial displacer samples. The graph does **not**
+store per-vertex samples (that would defeat LOD). The mesher re-evaluates the
+seeded noise at whatever icosahedron `detail` the LOD demands.
 
 ```ts
 interface BoulderGraph {
@@ -128,11 +130,8 @@ interface BoulderGraph {
   baseRadius: number;
   stretch: [number, number, number];
   squash: number;
-  // The noise field is identified by its seed + params; the graph does NOT
-  // store samples (that would defeat LOD). The mesher re-evaluates the seeded
-  // noise at whatever vertex density the LOD demands.
+  detail: number;          // build-time detail (full LOD)
   field: {
-    seed: number;          // permutation-table seed (from Rng)
     scale: number;
     offset: [number, number, number];
     octaves: number;
@@ -142,14 +141,15 @@ interface BoulderGraph {
     microAmplitude: number;
     ridged: boolean;       // fBm vs ridged multifractal
   };
+  // Live sampler from the (species, seed) noise table — kept on the graph so
+  // remeshing does not reconstruct the permutation.
+  noise: Noise3D;
 }
 ```
 
-**Migration** ([boulder.js](../src/generator/forms/boulder.js)): `buildBoulder`
-returns a `BoulderGraph` instead of a geometry. `displaceRadial` becomes a method
-on the mesher that takes `(geo, graph)` and samples `graph.field`. The seeded
-noise is reconstructed from `graph.field.seed` so the same graph reproduces at any
-LOD — same contract as today, just reified.
+**LOD** ([boulder.js](../src/generator/structure/boulder.js)): `meshBoulder(graph,
+{ detail })` builds a fresh icosahedron at the requested detail and samples
+`graph.field` per vertex. Same field, fewer verts at distance.
 
 ### `ColumnarGraph` — joint set
 
@@ -254,10 +254,17 @@ replaces the `geo` returned by today's factories; `applyErosion` and the rest of
 With a StructureGraph, LOD becomes:
 
 - **boulder** — sample `graph.field` at lower icosahedron `detail`. Same field,
-  fewer verts. (Already true today, but now the field is explicit data.)
-- **columnar/slate/crystal** — lower per-element geometry resolution (fewer
-  cylinder sides, fewer box segments) **without rebuilding the topology**. The
-  cluster looks identical at distance, just lower-poly per element.
+  fewer verts.
+- **columnar** — same joint centres; fewer cylinder radial segments
+  (`columnarRadialSegments`: 6 → 5 → 4).
+- **slate** — same slab footprints; fewer box segments
+  (`slateSegmentsForDetail`).
+- **crystal** — same nucleation pattern; fewer radial sides
+  (`crystalRadialSides`: habit preserved at detail ≥ 3, then 4 → 3).
+
+`buildRockLOD` calls `buildRockStructure` once, then `meshRockFromStructure` per
+level with a fresh `erosionRng.clone()` so hydraulic erosion stays deterministic
+per level without cross-talk.
 
 This is exactly how SeedTree shares one `stems[]` skeleton across LOD levels.
 
