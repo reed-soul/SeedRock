@@ -1,4 +1,5 @@
 import GUI from 'lil-gui';
+import { mountPanelFX } from './panel-fx.js';
 import { SPECIES, DEFAULT_SPECIES } from '../species/index.js';
 import { createShowcaseState } from './showcase.js';
 import { controlsFromSpecies, applySpeciesControls } from '../species/controls.js';
@@ -13,7 +14,19 @@ import { toPreset, fromPreset } from '../species/preset.js';
  */
 export function buildGUI(ctx) {
   const gui = new GUI({ title: 'SeedRock' });
-  gui.domElement.style.cssText += 'opacity:0.94;';
+
+  // Deep reskin: breathe-border, FX background, brand header.
+  gui.domElement.classList.add('sr-breath-border');
+
+  // Replace lil-gui's default title bar with a SeedRock brand header.
+  gui.domElement.querySelector(':scope > .lil-title')?.remove();
+  const brand = document.createElement('div');
+  brand.className = 'sr-brand';
+  brand.innerHTML = '<span class="sr-brand-dot"></span>SEEDROCK';
+  gui.domElement.insertBefore(brand, gui.domElement.firstChild);
+
+  // Mineral-vein WebGL2 background — sits behind the content layers.
+  mountPanelFX(gui.domElement);
 
   const folders = {
     species: gui.addFolder('Rock Type'),
@@ -160,6 +173,10 @@ export function buildGUI(ctx) {
   }
 
   syncFromPreset(ctx.species[state.speciesKey] ?? ctx.species[DEFAULT_SPECIES]);
+
+  // Folders start collapsed — the panel opens as a tidy column of titles,
+  // echoing SeedThree's calm first impression.
+  gui.foldersRecursive().forEach((f) => f.close());
 
   return gui;
 }
