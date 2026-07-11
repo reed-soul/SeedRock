@@ -5,6 +5,8 @@ import { loadOverlayTextures } from './materials/overlays.js';
 import { downloadGLB } from './export/glb.js';
 import { SPECIES, DEFAULT_SPECIES } from './species/index.js';
 import { buildGUI, applyOverrides, createDefaultState } from './ui/controls.js';
+import { mountPanelFX } from './ui/panel-fx.js';
+import './ui/theme.css';   // side-effect: loads lil-gui base + SeedRock reskin (browser only)
 import { applyUrlState } from './ui/url-state.js';
 import { applyCameraPreset } from './ui/showcase.js';
 import { createToonPipeline } from './render/toon-pipeline.js';
@@ -25,20 +27,76 @@ const fail = (msg) => {
   console.error(msg);
 };
 
+// Loading overlay is driven by classes (see theme.css): `.on` shows it,
+// `.fade` animates the 0.4s opacity-out. Using classes — not inline
+// display — keeps the compositor in charge of the fade, so it stays
+// smooth even when the main thread stalls on shader compilation.
+let _fadeTimer = 0;
 const setLoading = (on, text, frac) => {
   if (!loadingBox) return;
-  loadingBox.style.display = on ? 'flex' : 'none';
-  loadingBox.classList.toggle('fade', !on);
+  if (on) {
+    clearTimeout(_fadeTimer);
+    loadingBox.classList.add('on');
+    loadingBox.classList.remove('fade');
+  } else {
+    // Trigger the 0.4s opacity fade first (compositor-driven, stays
+    // smooth during a stall), then drop display once it's done so the
+    // overlay is fully gone — not just transparent. The timer is
+    // tracked so a subsequent show() can cancel a pending hide.
+    loadingBox.classList.add('fade');
+    clearTimeout(_fadeTimer);
+    _fadeTimer = setTimeout(() => loadingBox.classList.remove('on'), 450);
+  }
   if (text && loadingMsg) loadingMsg.textContent = text;
   if (frac != null && loadingBar) loadingBar.style.width = `${Math.round(frac * 100)}%`;
 };
 
+// Promise that resolves only after two rAFs AND a 300ms setTimeout
+// fallback — guaranteeing the overlay really painted to screen before
+// we hand control to a blocking operation (shader compile, heavy mesh).
 const nextPaint = () => new Promise((r) => {
-  requestAnimationFrame(() => requestAnimationFrame(r));
+  let done = false;
+  const fin = () => { if (!done) { done = true; r(); } };
+  requestAnimationFrame(() => requestAnimationFrame(fin));
+  setTimeout(fin, 300);
 });
 
+// Set a stage label + bar fraction, then yield a paint so the user
+// actually sees it. Essential during heavy rebuilds where synchronous
+// GPU work would otherwise collapse all stages into one jump.
+const stageStep = async (text, frac) => {
+  setLoading(true, text, frac);
+  await nextPaint();
+};
+
+// After reaching 100%, the real stall often happens inside the render
+// loop's synchronous render(), not in our own code. So we wait until
+// the loop reports a few fast frames in a row before hiding — capped
+// so a wedged compile can't hang the loader forever. The sweep
+// highlight (compositor-driven) keeps moving the whole time.
+let _frameTimes = [];
+const markFrame = (ms) => { _frameTimes.push(ms); };
+const waitForSmoothFrames = (smoothMs = 100, need = 3, capMs = 8000) => new Promise((resolve) => {
+  const start = performance.now();
+  _frameTimes = [];
+  const check = () => {
+    const recent = _frameTimes.slice(-need);
+    if (recent.length >= need && recent.every((m) => m < smoothMs)) return resolve();
+    if (performance.now() - start > capMs) return resolve();
+    setTimeout(check, 60);
+  };
+  check();
+});
+
+let _loaderFx = null;
+
 async function main() {
-  setLoading(true, 'Initializing renderer…', 0.1);
+  // Mount the mineral-vein background behind the loading card so the
+  // overlay is alive from the very first frame.
+  const loadingCard = loadingBox?.querySelector('.card');
+  if (loadingCard) _loaderFx = mountPanelFX(loadingCard);
+
+  await stageStep('Initializing renderer…', 0.1);
 
   const app = document.getElementById('app');
   if (!app) return fail('Missing #app container');
@@ -144,7 +202,7 @@ async function main() {
   async function rebuildRock() {
     const gen = ++rebuildGen;
     window.__SEEDROCK_READY = false;
-    setLoading(true, 'Generating rock…', 0.35);
+    await stageStep('Generating rock…', 0.35);
     disposeContent();
 
     const base = SPECIES[state.speciesKey] ?? SPECIES[DEFAULT_SPECIES];
@@ -172,7 +230,7 @@ async function main() {
     };
 
     if (state.sceneMode === 'living') {
-      setLoading(true, 'Building living scene…', 0.5);
+      await stageStep('Building living scene…', 0.5);
       currentRoot = await buildLivingScene(preset, state.seed, currentMaterial, {
         scatterCount: state.scene.scatterCount,
         ...lodOpts,
@@ -208,6 +266,11 @@ async function main() {
     // (disposeContent path may have swapped the material the brush captured).
     if (state.sceneMode === 'paint' && !brush.enabled) state.onPaintEnter?.();
     updateHud(preset);
+    await stageStep('Ready', 1);
+    // Wait for the render loop to settle into smooth frames before hiding
+    // — the heaviest GPU stall lands inside the synchronous render(), not
+    // here, so this is where compilation actually finishes.
+    await waitForSmoothFrames();
     setLoading(false);
     window.__SEEDROCK_READY = true;
   }
@@ -255,6 +318,9 @@ async function main() {
   renderer.setAnimationLoop((time) => {
     const dt = perf.last ? time - perf.last : 16;
     perf.last = time;
+    // Feed the frame time to the loader so waitForSmoothFrames can tell
+    // when the GPU stall from pipeline compilation has actually ended.
+    markFrame(dt);
     perf.acc += dt;
     perf.frames++;
     if (perf.acc >= 500) {

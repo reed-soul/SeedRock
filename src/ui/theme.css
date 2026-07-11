@@ -1,0 +1,200 @@
+/* ──────────────────────────────────────────────────────────────
+   SeedRock theme — copper→ochre mineral identity.
+   Loading overlay + lil-gui panel share one visual language:
+   • breathing gradient border (1.5px mask stroke, 9s loop)
+   • progress-bar sweep highlight (compositor-driven, never stalls)
+   • mineral-vein WebGL2 background (panel-fx.js)
+   ────────────────────────────────────────────────────────────── */
+
+/* lil-gui ships its base styles as a separate CSS file, but its
+   package.json exports field only exposes the JS entry — so neither
+   a bare `@import 'lil-gui/...'` nor a JS `import 'lil-gui/...css'`
+   resolves. We pull it in via a relative path that postcss-import
+   can follow (this file lives in src/ui, node_modules is three up). */
+@import '../../node_modules/lil-gui/dist/lil-gui.css';
+
+:root {
+  /* SeedRock palette — copper patina → ochre → sand */
+  --sr-copper:  #5e8c6a;
+  --sr-ochre:   #c87f3f;
+  --sr-sand:    #d4a574;
+  --sr-surface: #16181d;
+  --sr-text:    #d4dae3;
+  --sr-dim:     #8a96a8;
+  --sr-glow:    rgba(200, 127, 63, 0.45);
+
+  --sr-radius: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Breathing gradient border — shared by panel + loading card.
+   A 1.5px gradient stroke built with the mask trick: two solid
+   masks composited with xor leave only the padding ring visible,
+   so the gradient paints just the border, not the fill.
+   ═══════════════════════════════════════════════════════════════ */
+.sr-breath-border { position: relative; }
+.sr-breath-border::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(140deg, var(--sr-copper), var(--sr-ochre), var(--sr-copper));
+  background-size: 300% 300%;
+  animation: sr-breathe 9s ease-in-out infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 4;
+}
+@keyframes sr-breathe {
+  0%, 100% { background-position: 0% 40%; }
+  50%      { background-position: 100% 60%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Loading overlay — the panel's full-screen twin.
+   ═══════════════════════════════════════════════════════════════ */
+#loading {
+  position: fixed; inset: 0; z-index: 20; display: none;
+  align-items: center; justify-content: center;
+  background: radial-gradient(120% 120% at 50% 40%, rgba(18, 20, 24, 0.82), rgba(8, 9, 11, 0.94));
+  backdrop-filter: blur(3px);
+  color: var(--sr-text);
+  font: 13px/1.5 'Segoe UI', system-ui, sans-serif;
+  text-align: center; letter-spacing: 0.02em;
+  opacity: 1; transition: opacity 0.4s ease;
+}
+#loading.on { display: flex; }
+#loading.fade { opacity: 0; pointer-events: none; }
+
+#loading .card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  padding: 32px 44px 26px;
+  border-radius: var(--sr-radius);
+  background: var(--sr-surface);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+/* Mineral-vein FX canvas sits behind the card content (z-index 0). */
+#loading .card > .sr-fx {
+  position: absolute; inset: 0; z-index: 0;
+  width: 100%; height: 100%; pointer-events: none;
+}
+/* Dark scrim so the vein texture reads as ambience, not noise. */
+#loading .card::after {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(160deg, rgba(18,20,24,0.72), rgba(18,20,24,0.84));
+  pointer-events: none;
+}
+#loading .card > *:not(.sr-fx) { position: relative; z-index: 2; }
+
+.sr-brand {
+  font-size: 22px; font-weight: 600; letter-spacing: 0.08em;
+  color: var(--sr-text);
+  text-shadow: 0 0 18px rgba(200, 127, 63, 0.25);
+}
+
+/* Progress bar */
+#loading .bar {
+  width: 300px; max-width: 60vw; height: 6px; border-radius: 4px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(120, 130, 145, 0.28);
+  overflow: hidden; position: relative;
+}
+#loading .bar-fill {
+  height: 100%; width: 0%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--sr-copper), var(--sr-ochre) 55%, var(--sr-sand));
+  box-shadow: 0 0 10px var(--sr-glow);
+  transition: width 0.25s ease;
+}
+/* Sweep highlight — the key trick: this uses transform (a compositor
+   property), so it keeps animating even while the main thread is
+   frozen compiling shaders. The wait never reads as a hard stall. */
+#loading .bar::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 42%;
+  background: linear-gradient(90deg, transparent, rgba(212, 165, 116, 0.42), transparent);
+  transform: translateX(-120%); will-change: transform;
+  animation: sr-shine 1.15s linear infinite;
+}
+@keyframes sr-shine { to { transform: translateX(320%); } }
+
+#loading .msg { min-height: 1.4em; color: var(--sr-dim); }
+
+/* ═══════════════════════════════════════════════════════════════
+   lil-gui panel — deep reskin.
+   We keep lil-gui's native folder/slider/color machinery and only
+   restyle via CSS variables + lil-* class selectors, then prepend
+   a brand header and mount the FX canvas.
+   ═══════════════════════════════════════════════════════════════ */
+.lil-gui.lil-root {
+  --background-color: var(--sr-surface);
+  --title-background-color: #11141a;
+  --title-text-color: var(--sr-text);
+  --widget-color: #23272f;
+  --hover-color: #2c313b;
+  --focus-color: #36404e;
+  --text-color: var(--sr-text);
+  /* copper→ochre for numbers/buttons, sand for strings */
+  --number-color: #b5cf9e;
+  --string-color: var(--sr-sand);
+
+  position: fixed;
+  top: 12px; right: 12px;
+  border-radius: var(--sr-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden auto;
+  max-height: calc(100vh - 24px);
+}
+
+/* The FX canvas + scrim live inside the root; sit them behind content. */
+.lil-gui.lil-root > .sr-fx {
+  position: absolute; inset: 0; z-index: 0;
+  width: 100%; height: 100%; pointer-events: none;
+}
+.lil-gui.lil-root > .lil-children {
+  position: relative; z-index: 3;
+}
+.lil-gui.lil-root > .lil-title { position: relative; z-index: 3; }
+
+/* Slider fill gets the copper→ochre gradient to match the progress bar. */
+.lil-controller.lil-number .lil-fill {
+  background: linear-gradient(90deg, var(--sr-copper), var(--sr-ochre));
+  border-right-color: var(--sr-sand);
+}
+/* Number input text echoes the warm palette. */
+.lil-controller.lil-number input { color: var(--number-color); }
+
+/* Buttons (function controllers) get a subtle ochre hover. */
+.lil-gui .lil-controller button:hover {
+  background: var(--sr-ochre);
+  color: #1a1410;
+}
+
+/* Folder titles — closed folders dim slightly so open ones pop. */
+.lil-gui.lil-closed > .lil-title { opacity: 0.82; }
+
+/* Sub-folder left border picks up the widget tone (already set). */
+
+/* ═══════════════════════════════════════════════════════════════
+   Brand header injected into the panel (controls.js prepends it).
+   ═══════════════════════════════════════════════════════════════ */
+.lil-gui.lil-root > .sr-brand {
+  position: relative; z-index: 3;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px var(--padding, 4px) 8px;
+  font-size: 14px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--sr-text);
+  border-bottom: 1px solid rgba(140, 150, 165, 0.16);
+  user-select: none;
+}
+.lil-gui.lil-root > .sr-brand .sr-brand-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sr-copper), var(--sr-ochre));
+  box-shadow: 0 0 8px var(--sr-glow);
+  flex-shrink: 0;
+}
